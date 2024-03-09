@@ -1,4 +1,5 @@
-out/*.html
+out/*
+!out/main.css
 rec/
 
 # Byte-compiled / optimized / DLL files

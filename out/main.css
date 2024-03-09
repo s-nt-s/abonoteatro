@@ -51,3 +51,7 @@ div.evento > div.info p {
 span.descuento {
   color: green;
 }
+
+.sesiones li {
+  font-family: monospace;
+}

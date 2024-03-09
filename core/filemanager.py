@@ -3,6 +3,7 @@ import logging
 from os import makedirs
 from os.path import dirname, realpath
 from pathlib import Path
+from functools import cache
 
 import requests
 from bs4 import BeautifulSoup, Tag
@@ -93,6 +94,10 @@ class FileManager:
                 "No existe metodo para leer ficheros {} [{}]".format(ext, file.name))
 
         return load_fl(file, *args, **kargv)
+
+    @cache
+    def cached_load(self, file, *args, **kargv):
+        return self.load(file, *args, **kargv)
 
     def dump(self, file, obj, *args, **kargv):
         """

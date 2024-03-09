@@ -1,24 +1,27 @@
 from core.web import Driver
 from os import environ
 from selenium.webdriver.common.by import By
-from typing import NamedTuple, Tuple, Set
+from typing import NamedTuple, Tuple, Set, Dict, List
 import re
 from bs4 import Tag
-from datetime import datetime
+from datetime import datetime, date
 from .cache import Cache
 import logging
 from functools import cached_property
+from .filemanager import FM
 
 logger = logging.getLogger(__name__)
 
 re_sp = re.compile(r"\s+")
 
 
-def title(s: str):
+def clean_txt(s: str):
     if s is None:
         return None
     if s == s.upper():
-        return s.title()
+        s = s.title()
+    s = re.sub(r"\\", "", s)
+    s = re.sub(r"´", "'", s)
     return s
 
 
@@ -84,6 +87,14 @@ class Sesion(NamedTuple):
         obj = get_obj(*args, **kwargs)
         return Sesion(**obj)
 
+    @property
+    def hora(self):
+        if self.fecha is not None:
+            fch = self.fecha.split(" ")
+            if len(fch[-1]) == 5:
+                return fch[-1]
+        return None
+
 
 class Lugar(NamedTuple):
     txt: str
@@ -123,11 +134,42 @@ class Evento(NamedTuple):
 
     @property
     def titulo(self):
-        tit = title(self.txt)
-        sub = title(self.subtitulo)
+        tit = clean_txt(self.txt)
+        sub = clean_txt(self.subtitulo)
         if sub is None:
             return tit
         return tit+", "+sub
+
+    @property
+    def html(self) -> Tag:
+        return FM.cached_load(f"rec/evento/html/{self.id}.html")
+
+    @property
+    def condiciones(self):
+        n = self.html.select_one("#informacioneventolargo")
+        if n is None:
+            return None
+        for d in n.findAll("div"):
+            if get_text(d) == "Ver menos":
+                d.extract()
+        n.attrs.clear()
+        n.attrs["class"] = "condiciones"
+        return str(n)
+
+    @property
+    def dias_hora(self):
+        dias: Dict[str, List[Sesion]] = {}
+        for e in self.sesiones:
+            dia = 'Cualquier día'
+            if e.fecha is not None:
+                dh = e.fecha.split(" ")
+                if len(dh[0]) == 10:
+                    dt = date(*map(int, dh[0].split("-")))
+                    dia = "LMXJVSD"[dt.weekday()]+' '+dh[0]
+            if dia not in dias:
+                dias[dia] = []
+            dias[dia].append(e)
+        return dias.items()
 
 
 def get_text(n: Tag):
@@ -189,8 +231,9 @@ class Api(Driver):
         self.get(url)
         iframe = self.safe_wait(Api.IFRAME, by=By.CSS_SELECTOR, seconds=5)
         if iframe is not None:
+            src = iframe.get_attribute("src")
             self.driver.switch_to.frame(iframe)
-            iframe = iframe.get_attribute("src")
+            iframe = src
         self.wait("h2", by=By.CSS_SELECTOR)
         soup = self.get_soup(iframe)
         event = self.find_events(soup)
@@ -249,7 +292,7 @@ class Api(Driver):
             ids.add(int(_id))
         return tuple(sorted(ids))
 
-    @Cache("rec/evento/{}.html")
+    @Cache("rec/evento/html/{}.html")
     def get_evento_soup(self, id: int):
         self.execute_script(f"show_event_modal({id})")
         self.wait(Api.EVENTO, by=By.CSS_SELECTOR)
@@ -257,7 +300,7 @@ class Api(Driver):
         self.click("btnModeClose")
         return node
 
-    @Cache("rec/sesion/{}.html")
+    @Cache("rec/sesion/html/{}.html")
     def get_sesion_soup(self, id: int):
         url = Api.URLSES + str(id)
         w = self.to_web()
@@ -268,13 +311,20 @@ class Api(Driver):
     def get_sesion(self, id: int):
         soup = self.get_sesion_soup(id)
         txts = tuple(t for t in map(get_text, soup.select("div.updated.published span")) if t is not None)
-        dt = None
-        if len(txts) == 3:
-            fecha, lugar, hora = txts
-            dd, mm, yyyy = map(int, fecha.split("/"))
-            hh, _m = map(int, hora.split()[-1].split(":"))
-            dt = datetime(yyyy, mm, dd, hh, _m, 0, 0).strftime("%Y-%m-%d %H:%M")
-        return Sesion(id=id, fecha=dt)
+        fecha = None
+        dia, hora = None, None
+        for txt in txts:
+            if re.match(r"^\d+/\d+/\d+$", txt):
+                dia = tuple(reversed(tuple(map(int, txt.split("/")))))
+            elif re.match(r"^.*\s+\d+:\d+$", txt):
+                hora = tuple(map(int, txt.split()[-1].split(":")))
+        if None not in (dia, hora):
+            fecha = datetime(*dia, *hora, 0, 0).strftime("%Y-%m-%d %H:%M")
+        elif dia is not None:
+            fecha = datetime(*dia, 0, 0, 0, 0).strftime("%Y-%m-%d")
+        elif hora is not None:
+            fecha = datetime(2000, 1, 1, *hora, 0, 0).strftime("%H:%M")
+        return Sesion(id=id, fecha=fecha)
 
     @cached_property
     def eventos(self):

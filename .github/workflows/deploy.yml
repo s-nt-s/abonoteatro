@@ -2,7 +2,7 @@ name: deploy
 on:
   workflow_dispatch:
   schedule:
-  - cron: '0 5 * * *'
+  - cron: '0 10 * * *'
 permissions:
   contents: read
   pages: write
@@ -14,6 +14,8 @@ env:
   LOG_FORMAT: '%(name)s - %(levelname)s - %(message)s'
   LOG_MODE: 'a'
   MINIFY: "1"
+  ABONOTEATRO_USER: ${{ secrets.ABONOTEATRO_USER }}
+  ABONOTEATRO_PSW: ${{ secrets.ABONOTEATRO_PSW }}
 jobs:
   scrape_and_deploy:
     runs-on: ubuntu-latest

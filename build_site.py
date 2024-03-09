@@ -28,3 +28,12 @@ j.save(
     precio=Api.PRECIO,
     now=now
 )
+
+for e in eventos:
+    j.save(
+        "evento.html",
+        destino=f"e/{e.id}.html",
+        e=e,
+        precio=Api.PRECIO,
+        now=now
+    )
