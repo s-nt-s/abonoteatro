@@ -8,6 +8,9 @@ from datetime import datetime, date
 from .cache import Cache
 import logging
 from functools import cached_property
+import base64
+import json
+
 from .filemanager import FM
 
 logger = logging.getLogger(__name__)
@@ -23,6 +26,14 @@ def clean_txt(s: str):
     s = re.sub(r"\\", "", s)
     s = re.sub(r"´", "'", s)
     return s
+
+
+def to_int(s: str):
+    f = float(s)
+    i = int(s)
+    if f == i:
+        return i
+    return f
 
 
 def get_obj(*args, **kwargs) -> dict:
@@ -189,9 +200,7 @@ def get_float(n: Tag):
         return None
     txt = txt.strip(" €")
     txt = txt.replace(",", ".")
-    num = float(txt)
-    if num == int(num):
-        num = int(num)
+    num = to_int(txt)
     return num
 
 
@@ -241,6 +250,7 @@ class Api(Driver):
         logger.info(f"{len(event)} eventos encontrados")
         event = list(event)
         for i, e in enumerate(event):
+            js = self.get_evento_json(e.id)
             node = self.get_evento_soup(e.id)
             ids = self.find_ids_sesion(node)
             if len(ids) == 0:
@@ -293,6 +303,23 @@ class Api(Driver):
                 raise ApiException("URL de sesion extraña: "+href)
             ids.add(int(_id))
         return tuple(sorted(ids))
+
+    @Cache("rec/evento/json/{}.json")
+    def get_evento_json(self, id: int):
+        n = self.get_soup().select_one("#event_content_json_id_"+str(id))
+        if n is None:
+            return n
+        value = n.attrs["value"]
+        js = base64.b64decode(value).decode()
+        data = json.loads(js)
+        for k, v in list(data.items()):
+            if not isinstance(v, str):
+                continue
+            if v in ("true", "false"):
+                data[k] = v == "true"
+            elif re.match(r"^\d+(\.\d+)?$", v):
+                data[k] = to_int(v)
+        return data
 
     @Cache("rec/evento/html/{}.html")
     def get_evento_soup(self, id: int):
