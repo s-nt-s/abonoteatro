@@ -235,8 +235,10 @@ class Api(Driver):
             self.driver.switch_to.frame(iframe)
             iframe = src
         self.wait("h2", by=By.CSS_SELECTOR)
+        self.waitjs("window.show_event_modal != null")
         soup = self.get_soup(iframe)
         event = self.find_events(soup)
+        logger.info(f"{len(event)} eventos encontrados")
         event = list(event)
         for i, e in enumerate(event):
             node = self.get_evento_soup(e.id)
@@ -305,7 +307,7 @@ class Api(Driver):
         url = Api.URLSES + str(id)
         w = self.to_web()
         w.get(url)
-        logger.debug("GET "+url)
+        logger.info("GET "+url)
         return w.soup
 
     def get_sesion(self, id: int):
