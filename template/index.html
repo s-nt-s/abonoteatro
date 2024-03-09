@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1" name="viewport" />
+    <title>Abono Teatro</title>
+    <meta
+      name="Last-Modified"
+      content="{{now.strftime('%Y-%m-%d %H:%M:%S')}}"
+    />
+    <link rel="stylesheet" href="main.css" />
+  </head>
+
+  <body>
+    {% with root="." %} {% include "header.html" %} {% endwith %}
+    <main>
+      {% for e in eventos %}
+      <div id="e{{e.id}}" class="evento">
+        <img src="{{e.img}}" loading="lazy" alt="{{e.titulo}}"/>
+        <div class="info">
+          <p class="titulo">
+            <span title="{{e.precio}}€ -> {{precio}}€" class="descuento">{{e.descuento}}%</span>
+            {{e.titulo}}
+          </p>
+          <p class="lugar"><a href="{{e.lugar.url}}">{{e.lugar.txt}}</a></p>
+        </div>
+      </div>
+      {% endfor %}
+    </main>
+    {% with root="." %} {% include "footer.html" %} {% endwith %}
+  </body>
+</html>

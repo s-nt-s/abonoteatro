@@ -1,0 +1,53 @@
+body {
+  font-family: arial,sans serif;
+  font-size: 11pt;
+  margin: 0;
+}
+main {
+  margin: 8px;
+}
+header, footer {
+  padding: 1em;
+  clear: both;
+  margin: 0px;
+  color: #fff !important;
+  background-color: #3a3a3a !important;
+}
+footer {
+  margin-top: 16px !important;
+}
+footer p:first-child {
+  margin-top: 0;
+}
+footer p:last-child {
+  margin-bottom: 0;
+}
+header {
+  margin-bottom: 16px !important;
+}
+header p:first-child {
+  margin-top: 0;
+}
+header p:last-child {
+  margin-bottom: 0;
+}
+header a, footer a {
+  color: inherit;
+}
+main {
+  margin: auto;
+  max-width: 400px;
+}
+
+div.evento {
+  margin-bottom: 16px;
+}
+div.evento > img {
+  max-width:100%;
+}
+div.evento > div.info p {
+  margin: 0;
+}
+span.descuento {
+  color: green;
+}
