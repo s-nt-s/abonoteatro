@@ -1,5 +1,6 @@
 out/*
-!out/main.css
+!out/*.css
+!out/*.js
 rec/
 
 # Byte-compiled / optimized / DLL files
