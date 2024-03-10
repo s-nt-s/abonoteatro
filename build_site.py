@@ -26,7 +26,8 @@ j.save(
     "index.html",
     eventos=eventos,
     precio=Api.PRICE,
-    now=now
+    now=now,
+    count=len(eventos)
 )
 
 for e in eventos:
@@ -35,7 +36,8 @@ for e in eventos:
         destino=f"e/{e.id}.html",
         e=e,
         precio=Api.PRICE,
-        now=now
+        now=now,
+        count=len(eventos)
     )
 
 EventosRss(
