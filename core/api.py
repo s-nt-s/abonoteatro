@@ -30,7 +30,7 @@ def clean_txt(s: str):
 
 def to_int(s: str):
     f = float(s)
-    i = int(s)
+    i = int(f)
     if f == i:
         return i
     return f
