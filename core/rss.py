@@ -14,7 +14,7 @@ re_last_modified = re.compile(
 )
 
 
-class PisosRss:
+class EventosRss:
     def __init__(self, destino, root: str, eventos: List[Evento]):
         self.root = root
         self.eventos = eventos
@@ -65,7 +65,7 @@ class PisosRss:
         for p in self.eventos:
             link = f'{self.root}/e/{p.id}'
             yield rfeed.Item(
-                title=f'{p.descuento}% {p.titulo}',
+                title=f'{int(round(p.precio))}€ {p.titulo}',
                 link=link,
                 guid=rfeed.Guid(link),
                 #pubDate=datetime(*map(int, p.fecha.split("-")))

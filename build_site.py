@@ -4,6 +4,7 @@ from core.api import Api
 from core.j2 import Jnj2
 from datetime import datetime
 from core.log import config_log
+from core.rss import EventosRss
 import logging
 
 import argparse
@@ -36,3 +37,9 @@ for e in eventos:
         precio=Api.PRICE,
         now=now
     )
+
+EventosRss(
+    destino="out/",
+    root="https://s-nt-s.github.io/abonoteatro",
+    eventos=eventos
+).save("abonoteatro.rss")
