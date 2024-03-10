@@ -4,11 +4,24 @@ import re
 from datetime import date, datetime
 from urllib.parse import quote_plus
 from minify_html import minify
+from unidecode import unidecode
 
 import bs4
 from jinja2 import Environment, FileSystemLoader
 
 re_br = re.compile(r"<br/>(\s*</)")
+re_sp = re.compile(r"\s+")
+
+
+def simplify(s: str):
+    s = s.replace("/", " ")
+    s = re_sp.sub(" ", s).strip().lower()
+    s = unidecode(s)
+    spl = s.rsplit(",", 1)
+    if len(spl) == 2 and spl[1].strip() in ('el', 'la', 'los', 'las'):
+        s = spl[0].strip()
+    s = re_sp.sub("-", s)
+    return s
 
 
 def jinja_quote_plus(s: str):
@@ -43,23 +56,6 @@ def decimal(value):
     if int(value) == value:
         return int(value)
     return str(value).replace(".", ",")
-
-
-def mb(value):
-    if not isinstance(value, (int, float)):
-        return value
-    v = round(value)
-    if v == 0:
-        v = round(value*10)/10
-    if v != 0:
-        return str(v)+" MB"
-    value = value * 1024
-    v = round(v)
-    if v != 0:
-        return str(v)+" KB"
-    value = value * 1024
-    v = round(v)
-    return str(v)+" B"
 
 
 def toTag(html, *args):
@@ -97,10 +93,10 @@ class Jnj2():
             loader=FileSystemLoader(origen), trim_blocks=True)
         self.j2_env.filters['millar'] = millar
         self.j2_env.filters['decimal'] = decimal
-        self.j2_env.filters['mb'] = mb
         self.j2_env.filters['quote_plus'] = jinja_quote_plus
         self.j2_env.filters['to_attr'] = to_attr
         self.j2_env.filters['to_value'] = to_value
+        self.j2_env.filters['simplify'] = simplify
         self.destino = destino
         self.pre = pre
         self.post = post

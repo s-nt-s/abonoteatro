@@ -20,6 +20,9 @@ now = datetime.now()
 
 api = Api()
 eventos = sorted(api.events, key=lambda e: (-e.descuento, -len(e.sesiones)))
+categorias = {}
+for e in eventos:
+    categorias[e.categoria] = categorias.get(e.categoria, 0) +1
 
 j = Jnj2("template/", "out/")
 j.save(
@@ -27,6 +30,7 @@ j.save(
     eventos=eventos,
     precio=Api.PRICE,
     now=now,
+    categorias=categorias,
     count=len(eventos)
 )
 

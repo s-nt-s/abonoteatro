@@ -1,8 +1,63 @@
 import re
 from typing import List, Dict, Union
-from bs4 import Tag
+from bs4 import Tag, BeautifulSoup
 
 re_sp = re.compile(r"\s+")
+
+tag_concat = ('u', 'ul', 'ol', 'i', 'em', 'strong')
+tag_round = ('u', 'i', 'em', 'span', 'strong', 'a')
+tag_trim = ('li', 'th', 'td', 'div', 'caption', 'h[1-6]')
+tag_right = ('p',)
+heads = ("h1", "h2", "h3", "h4", "h5", "h6")
+block = heads + ("p", "div", "table", "article")
+inline = ("span", "strong", "b", "del")
+
+
+def clean_html(html: str):
+    soup = BeautifulSoup(html, "html.parser")
+    for div in soup.findAll(["div", "p"]):
+        if not div.find("img"):
+            txt = div.get_text()
+            txt = re_sp.sub("", txt)
+            if len(txt) == 0:
+                div.extract()
+    h = str(soup)
+    r = re.compile("(\s*\.\s*)</a>", re.MULTILINE | re.DOTALL | re.UNICODE)
+    h = r.sub("</a>\\1", h)
+    for t in tag_concat:
+        r = re.compile(
+            "</" + t + ">(\s*)<" + t + ">", re.MULTILINE | re.DOTALL | re.UNICODE)
+        h = r.sub("\\1", h)
+    for t in tag_round:
+        r = re.compile(
+            "(<" + t + ">)(\s+)", re.MULTILINE | re.DOTALL | re.UNICODE)
+        h = r.sub("\\2\\1", h)
+        r = re.compile(
+            "(<" + t + " [^>]+>)(\s+)", re.MULTILINE | re.DOTALL | re.UNICODE)
+        h = r.sub("\\2\\1", h)
+        r = re.compile(
+            "(\s+)(</" + t + ">)", re.MULTILINE | re.DOTALL | re.UNICODE)
+        h = r.sub("\\2\\1", h)
+    for t in tag_trim:
+        r = re.compile(
+            "(<" + t + ">)\s+", re.MULTILINE | re.DOTALL | re.UNICODE)
+        h = r.sub("\\1", h)
+        r = re.compile(
+            "\s+(</" + t + ">)", re.MULTILINE | re.DOTALL | re.UNICODE)
+        h = r.sub("\\1", h)
+    for t in tag_right:
+        r = re.compile(
+            "\s+(</" + t + ">)", re.MULTILINE | re.DOTALL | re.UNICODE)
+        h = r.sub("\\1", h)
+        r = re.compile(
+            "(<" + t + ">) +", re.MULTILINE | re.DOTALL | re.UNICODE)
+        h = r.sub("\\1", h)
+    r = re.compile(
+        r"\s*(<meta[^>]+>)\s*", re.MULTILINE | re.DOTALL | re.UNICODE)
+    h = r.sub(r"\n\1\n", h)
+    r = re.compile(r"\n\n+", re.MULTILINE | re.DOTALL | re.UNICODE)
+    h = r.sub(r"\n", h)
+    return h
 
 
 def clean_js_obj(obj: Union[List, Dict]):
@@ -21,6 +76,8 @@ def clean_js_obj(obj: Union[List, Dict]):
         return v == "true"
     if re.match(r"^\d+(\.\d+)?$", v):
         return to_int(v)
+    if "</p>" in v or "</div>" in v:
+        return clean_html(v)
     return v
 
 

@@ -68,5 +68,6 @@ class EventosRss:
                 title=f'{int(round(p.precio))}€ {p.titulo}',
                 link=link,
                 guid=rfeed.Guid(link),
+                categories=rfeed.Category(p.categoria)
                 #pubDate=datetime(*map(int, p.fecha.split("-")))
             )

@@ -3,7 +3,7 @@ from os import environ
 from selenium.webdriver.common.by import By
 from typing import NamedTuple, Tuple, Set, Dict, List
 import re
-from bs4 import Tag
+from bs4 import Tag, BeautifulSoup
 from datetime import datetime, date
 from .cache import Cache
 import logging
@@ -12,12 +12,21 @@ import base64
 import json
 from urllib.parse import quote
 from .util import clean_js_obj, clean_txt, get_obj, trim, get_text, get_or
+from unidecode import unidecode
 
 from .filemanager import FM
 
 logger = logging.getLogger(__name__)
 
 re_sp = re.compile(r"\s+")
+MONTHS = ("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "dic")
+
+
+def get_words(s: str):
+    s = re.sub(r"[,\.:]", " ", s)
+    s = re_sp.sub(" ", s).strip().lower()
+    s = unidecode(s)
+    return tuple(s.split())
 
 
 class TupleCache(Cache):
@@ -116,6 +125,7 @@ class Evento(NamedTuple):
     img: str
     subtitulo: str
     precio: float
+    categoria: str
     lugar: Lugar
     sesiones: Tuple[Sesion] = tuple()
 
@@ -146,7 +156,9 @@ class Evento(NamedTuple):
 
     @property
     def html(self) -> Tag:
-        return FM.cached_load(f"rec/detail/{self.id}.html")
+        soup = FM.cached_load(f"rec/detail/{self.id}.html")
+        if soup:
+            return BeautifulSoup(str(soup), "html.parser")
 
     @property
     def condiciones(self):
@@ -169,14 +181,14 @@ class Evento(NamedTuple):
                 dh = e.fecha.split(" ")
                 if len(dh[0]) == 10:
                     dt = date(*map(int, dh[0].split("-")))
-                    dia = "LMXJVSD"[dt.weekday()]+' '+dh[0]
+                    dia = "LMXJVSD"[dt.weekday()]+f' {dt.day:>2}-'+MONTHS[dt.month]
             if dia not in dias:
                 dias[dia] = []
             dias[dia].append(e)
         return dias.items()
 
     @staticmethod
-    def create(js: Dict, detail: Tag, sesiones: Tuple[Sesion]):
+    def create(js: Dict, detail: Tag, categoria: str, sesiones: Tuple[Sesion]):
         return Evento(
             id=js['id'],
             txt=clean_txt(js['name']),
@@ -184,7 +196,8 @@ class Evento(NamedTuple):
             img=js['image'],
             precio=get_or(js, 'precio', 'pvp'),
             lugar=Lugar.create(js),
-            sesiones=sesiones
+            sesiones=sesiones,
+            categoria=categoria
         )
 
 
@@ -254,10 +267,12 @@ class Api:
 
     @cached_property
     def events(self):
-        evs: Set[Evento] = set()
+        evs: Dict[int, Evento] = {}
         for url in Api.CATALOG:
-            evs = evs.union(self.get_events(url))
-        return tuple(sorted(evs))
+            for e in self.get_events(url):
+                if e.id not in evs or e.precio > evs[e.id].precio:
+                    evs[e.id] = e
+        return tuple(sorted(evs.values()))
 
     def get_events(self, url):
         evs: Set[Evento] = set()
@@ -269,6 +284,7 @@ class Api:
             evs.add(Evento.create(
                 js=js,
                 detail=detail,
+                categoria=self.find_category(url, js),
                 sesiones=self.find_days(js['id'])
             ))
         return tuple(sorted(evs))
@@ -366,10 +382,9 @@ class Api:
             return self.__visit_day(id)
         year = int(my[1])
         m = my[0].lower()[:3]
-        months = ("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "dic")
-        if m not in months:
+        if m not in MONTHS:
             return self.__visit_day(id)
-        month = months.index(m) + 1
+        month = MONTHS.index(m) + 1
         h, m = map(int, hm.split(":"))
         return Sesion(
             id=id,
@@ -400,3 +415,60 @@ class Api:
         self.get(url)
         logger.info("GET "+url)
         return self.w.soup
+
+    def find_category(self, url: str, js: Dict):
+        def _set(s: str):
+            return set(get_words(s))
+
+        def _txt(s: str):
+            if s is not None and len(s.strip()) > 0:
+                soup = BeautifulSoup(s, "html.parser")
+                txt = get_text(soup)
+                if txt is not None:
+                    return get_words(txt)
+
+        monimpro = "monologo / impro"
+        musica = "musical / concierto"
+        path = url.rstrip("/").split("/")[-1]
+        name = js['name'] + " "+(js['sub'] or "")
+        info = _txt((js['info'] or "")+" "+(js['condicion'] or ""))
+        if path == "cine_peliculas.php":
+            return "cine"
+        if _set(name).intersection(("autocine", "cinesa", "cinesur", "yelmo", "mk2")):
+            return "cine"
+        if path == "cine-y-eventos" and _set(name).intersection(("cines", )):
+            return "cine"
+        if _set(name).intersection(("exposicion", "exposiciones", "museum", "museo")):
+            return "exposición / museo"
+        if _set(name).intersection(("magic", "magia", "mago")):
+            return "magia"
+        if _set(name).intersection(("flamenco", )):
+            return "flamenco"
+        if _set(name).intersection(("bingo", "drag")):
+            return "otros"
+        if path == "teatro" and _set(name).intersection(("musical", "concierto")):
+            return musica
+        if _set(name).intersection(("monologuistas", "impro", "comedia", "comedy", "monologo", "monologos", "openmic", "open-mic", "standup", "stand-up")):
+            return monimpro
+        line = " ".join(get_words(name))
+        if "monologo" in line or "open mic" in line or "stand up" in line:
+            return monimpro
+        if info:
+            nf = " ".join(info)
+            if set(info).intersection(("standup", "stand-up", "open-mic", "openmic", "monologo", "monologos")):
+                return monimpro
+            if "open mic" in nf or "stand up" in nf:
+                return monimpro
+            if "jardin botanico" in nf:
+                return "otros"
+            if path == "teatro" and (("comedias musicales" in nf) or ("comedia musical" in nf)):
+                return musica
+            if _set(js['recinto']).intersection(("houdini", )) and set(info).intersection(("magia", "mago", "mentalista")):
+                return "magia"
+            if path == "teatro" and set(info).intersection(("musical", "concierto", "percusion")):
+                return musica
+            if path == "teatro" and set(info).intersection(("magia", "mago", "mentalista")):
+                return "magia"
+        if path == "teatro":
+            return "teatro"
+        return "otros"
