@@ -316,7 +316,10 @@ class Api:
             w.wait("h2", by=By.CSS_SELECTOR)
             w.waitjs("window.show_event_modal != null")
             soup = w.get_soup(iframe)
-            return soup.select('input[type="hidden"]')
+            npts = soup.select('input[type="hidden"]')
+        if len(npts) == 0:
+            raise ApiException(f"0 eventos en {url}")
+        return npts
 
     @Cache("rec/detail/{}.html")
     def get_soup_detail(self, id: int):
