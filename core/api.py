@@ -211,8 +211,11 @@ class PortalDriver(Driver):
             return
         r = super().get(url)
         logger.info("GET "+url)
-        self.waitjs('window.document.readyState === "complete"')
+        self.wait_ready()
         return r
+
+    def wait_ready(self):
+        self.waitjs('window.document.readyState === "complete"')
 
 
 class Api:
@@ -308,6 +311,7 @@ class Api:
             if iframe is not None:
                 src = iframe.get_attribute("src")
                 w.driver.switch_to.frame(iframe)
+                w.wait_ready()
                 iframe = src
             w.wait("h2", by=By.CSS_SELECTOR)
             w.waitjs("window.show_event_modal != null")
