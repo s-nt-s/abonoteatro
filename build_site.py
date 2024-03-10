@@ -17,15 +17,14 @@ config_log("log/build_site.log")
 logger = logging.getLogger(__name__)
 now = datetime.now()
 
-with Api("firefox") as api:
-    api.login()
-    eventos = sorted(api.eventos, key=lambda e: (-e.descuento, -len(e.sesiones)))
+api = Api()
+eventos = sorted(api.events, key=lambda e: (-e.descuento, -len(e.sesiones)))
 
 j = Jnj2("template/", "out/")
 j.save(
     "index.html",
     eventos=eventos,
-    precio=Api.PRECIO,
+    precio=Api.PRICE,
     now=now
 )
 
@@ -34,6 +33,6 @@ for e in eventos:
         "evento.html",
         destino=f"e/{e.id}.html",
         e=e,
-        precio=Api.PRECIO,
+        precio=Api.PRICE,
         now=now
     )

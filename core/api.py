@@ -10,43 +10,13 @@ import logging
 from functools import cached_property
 import base64
 import json
+from .util import clean_js_obj, clean_txt, get_obj, trim, get_text, get_or
 
 from .filemanager import FM
 
 logger = logging.getLogger(__name__)
 
 re_sp = re.compile(r"\s+")
-
-
-def clean_txt(s: str):
-    if s is None:
-        return None
-    if s == s.upper():
-        s = s.title()
-    s = re.sub(r"\\", "", s)
-    s = re.sub(r"´", "'", s)
-    return s
-
-
-def to_int(s: str):
-    f = float(s)
-    i = int(f)
-    if f == i:
-        return i
-    return f
-
-
-def get_obj(*args, **kwargs) -> dict:
-    if len(args) != 0 and len(kwargs) != 0:
-        raise ValueError()
-    if len(args) > 1:
-        raise ValueError()
-    if len(args) == 0:
-        return kwargs
-    obj = args[0]
-    if not isinstance(obj, (dict, list)):
-        raise ValueError()
-    return obj
 
 
 class TupleCache(Cache):
@@ -76,6 +46,12 @@ class TupleCache(Cache):
         return super().save(file, data, *args, **kwargs)
 
 
+class UrlCache(Cache):
+    def parse_file_name(self, url: str, slf=None, **kargv):
+        path = url.rstrip("/").split("/")[-1]
+        return self.file.format(path)
+
+
 class UrlTupleCache(TupleCache):
     def parse_file_name(self, url: str, slf=None, **kargv):
         path = url.rstrip("/").split("/")[-1]
@@ -88,7 +64,7 @@ class Sesion(NamedTuple):
 
     @property
     def url(self):
-        return Api.URLSES + str(self.id)
+        return Api.URLDAY + str(self.id)
 
     def merge(self, **kwargs):
         return Evento(**{**self._asdict(), **kwargs})
@@ -109,12 +85,28 @@ class Sesion(NamedTuple):
 
 class Lugar(NamedTuple):
     txt: str
-    url: str
+    direccion: str
 
     @staticmethod
     def build(*args, **kwargs):
         obj = get_obj(*args, **kwargs)
         return Lugar(**obj)
+
+    @staticmethod
+    def create(js: Dict):
+        dire = js['direccion']
+        muni = js['municipio']
+
+        return Lugar(
+            txt=js['recinto'],
+            direccion=trim((dire or "") + ' ' + (muni or ""))
+        )
+
+    @property
+    def url(self):
+        if self.direccion is None:
+            return "#"
+        return "https://www.google.com/maps/place/" + self.direccion.replace(" ", "+")
 
 
 class Evento(NamedTuple):
@@ -140,7 +132,7 @@ class Evento(NamedTuple):
     def descuento(self):
         if self.precio in (None, 0):
             return 0
-        d = (self.precio-Api.PRECIO)
+        d = (self.precio-Api.PRICE)
         return round((d/self.precio)*100)
 
     @property
@@ -153,7 +145,7 @@ class Evento(NamedTuple):
 
     @property
     def html(self) -> Tag:
-        return FM.cached_load(f"rec/evento/html/{self.id}.html")
+        return FM.cached_load(f"rec/detail/{self.id}.html")
 
     @property
     def condiciones(self):
@@ -182,45 +174,29 @@ class Evento(NamedTuple):
             dias[dia].append(e)
         return dias.items()
 
-
-def get_text(n: Tag):
-    if n is None:
-        return None
-    txt = n.get_text()
-    txt = re_sp.sub(r" ", txt)
-    txt = txt.strip()
-    if len(txt) == 0:
-        return None
-    return txt
-
-
-def get_float(n: Tag):
-    txt = get_text(n)
-    if txt is None:
-        return None
-    txt = txt.strip(" €")
-    txt = txt.replace(",", ".")
-    num = to_int(txt)
-    return num
+    @staticmethod
+    def create(js: Dict, detail: Tag, sesiones: Tuple[Sesion]):
+        return Evento(
+            id=js['id'],
+            txt=clean_txt(js['name']),
+            subtitulo=clean_txt(js['sub']),
+            img=js['image'],
+            precio=get_or(js, 'precio', 'pvp'),
+            lugar=Lugar.create(js),
+            sesiones=sesiones
+        )
 
 
 class ApiException(Exception):
     pass
 
 
-class Api(Driver):
-    IFRAME = 'div[role="main"] iframe'
-    SESION = "div.bsesion a.buyBtn"
-    EVENTO = '#modal_event_content > div.container'
-    URLSES = 'https://compras.abonoteatro.com/compra/?eventocurrence='
-    PRECIO = 3.50
-    LISTAS = (
-        "https://compras.abonoteatro.com/teatro/",
-        "https://compras.abonoteatro.com/cine-y-eventos/",
-        "https://www.abonoteatro.com/catalogo/cine_peliculas.php",
-    )
+USER = environ.get("ABONOTEATRO_USER")
+PSW = environ.get("ABONOTEATRO_PSW")
 
-    def login(self, user: str = environ.get("ABONOTEATRO_USER"), psw: str = environ.get("ABONOTEATRO_PSW")):
+
+class PortalDriver(Driver):
+    def login(self, user: str = USER, psw: str = PSW):
         self.get("https://compras.abonoteatro.com/login/")
         self.val("nabonadologin", user)
         self.val("contrasenalogin", psw)
@@ -229,116 +205,171 @@ class Api(Driver):
         self.wait(Api.IFRAME, by=By.CSS_SELECTOR)
         logger.info("login OK")
 
-    def get(self, url, *args, **kwargs):
+    def get(self, url):
         if self.current_url == url:
             return
-        super().get(url, *args, **kwargs)
+        r = super().get(url)
         logger.info("GET "+url)
+        self.waitjs('window.document.readyState === "complete"')
+        return r
 
-    @UrlTupleCache("rec/evento/{}.json", builder=Evento.build)
-    def get_eventos(self, url):
-        self.get(url)
-        iframe = self.safe_wait(Api.IFRAME, by=By.CSS_SELECTOR, seconds=5)
-        if iframe is not None:
-            src = iframe.get_attribute("src")
-            self.driver.switch_to.frame(iframe)
-            iframe = src
-        self.wait("h2", by=By.CSS_SELECTOR)
-        self.waitjs("window.show_event_modal != null")
-        soup = self.get_soup(iframe)
-        event = self.find_events(soup)
-        logger.info(f"{len(event)} eventos encontrados")
-        event = list(event)
-        for i, e in enumerate(event):
-            js = self.get_evento_json(e.id)
-            node = self.get_evento_soup(e.id)
-            ids = self.find_ids_sesion(node)
-            if len(ids) == 0:
-                logger.warning(f"Evento {e.id} ({e.txt}) no tiene sesiones")
-                continue
-            event[i] = e.merge(
-                sesiones=tuple(map(self.get_sesion, ids))
-            )
-        if iframe is not None:
-            self.driver.switch_to.default_content()
-        return tuple(event)
 
-    def find_events(self, soup: Tag):
-        event: Set[Evento] = set()
-        for row in soup.select("div.row > div"):
-            author = row.select_one("div.author")
-            auttxt = get_text(author)
-            if auttxt == "ABONOTEATRO":
+class Api:
+    IFRAME = 'div[role="main"] iframe'
+    BTNDAY = "div.bsesion a.buyBtn"
+    EVENT = '#modal_event_content > div.container'
+    URLDAY = 'https://compras.abonoteatro.com/compra/?eventocurrence='
+    DETAIL = 'https://www.abonoteatro.com/catalogo/detalle_evento.php'
+    PRICE = 3.50
+    CATALOG = (
+        "https://compras.abonoteatro.com/teatro/",
+        "https://compras.abonoteatro.com/cine-y-eventos/",
+        "https://www.abonoteatro.com/catalogo/cine_peliculas.php",
+    )
+
+    def __init__(self):
+        self.__w = None
+        self.__base64: Dict[str, str] = {}
+
+    def get(self, url, *args, **kwargs):
+        if self.w.url == url and len(args) == 0 and len(kwargs) == 0:
+            return
+        self.w.get(url, *args, **kwargs)
+        if kwargs:
+            logger.info("POST "+url)
+        else:
+            logger.info("GET "+url)
+
+    @property
+    def w(self):
+        if self.__w is None:
+            with PortalDriver("firefox") as w:
+                w.login()
+                self.__w = w.to_web()
+        return self.__w
+
+    @cached_property
+    def events(self):
+        evs: Set[Evento] = set()
+        for url in Api.CATALOG:
+            evs = evs.union(self.get_events(url))
+        return tuple(sorted(evs))
+
+    def get_events(self, url):
+        evs: Set[Evento] = set()
+        for js in self.get_js_events(url):
+            if js['name'] == "Compra o Regala ABONOTEATRO":
                 continue
-            _id = int(row.attrs["id"].split("-")[-1])
-            h2 = row.find("h2")
-            txt = get_text(h2)
-            href = h2.find("a").attrs["href"]
-            if href != "#":
-                if href in Api.LISTAS:
-                    continue
-                raise ApiException(f"KO {_id} {txt} URL en H2 {href}")
-            logger.info(f"{_id:>5}: {txt}")
-            event.add(Evento(
-                id=_id,
-                txt=txt,
-                subtitulo=get_text(row.select_one("p.subtitulo")),
-                img=row.select_one("a img").attrs["src"],
-                precio=get_float(row.select_one("span.precioboxsesion")),
-                lugar=Lugar(
-                    txt=auttxt,
-                    url=author.find("a").attrs["href"]
-                )
+            id = js['id']
+            detail = self.get_soup_detail(id)
+            evs.add(Evento.create(
+                js=js,
+                detail=detail,
+                sesiones=self.find_days(js['id'])
             ))
-        return tuple(sorted(event))
+        return tuple(sorted(evs))
 
-    def find_ids_sesion(self, soup: Tag):
-        ids: Set[int] = set()
-        for a in soup.select(Api.SESION):
-            href = a.attrs["href"]
-            if not href.startswith(Api.URLSES):
-                raise ApiException("URL de sesion extraña: "+href)
-            _, _id = href.split("=", 1)
-            if not _id.isdigit():
-                raise ApiException("URL de sesion extraña: "+href)
-            ids.add(int(_id))
-        return tuple(sorted(ids))
+    @UrlCache("rec/event/{}.json")
+    def get_js_events(self, url: str):
+        evs: Dict[int, Dict] = {}
+        for id, value, data in self.get_base64_event(url):
+            logger.info(f"{id:>6} {data['name']}")
+            data["__parent__"] = self.w.url
+            evs[data['id']] = data
+        return tuple(sorted(evs.values(), key=lambda e: e['id']))
 
-    @Cache("rec/evento/json/{}.json")
-    def get_evento_json(self, id: int):
-        n = self.get_soup().select_one("#event_content_json_id_"+str(id))
-        if n is None:
-            return n
-        value = n.attrs["value"]
-        js = base64.b64decode(value).decode()
-        data = json.loads(js)
-        for k, v in list(data.items()):
-            if not isinstance(v, str):
+    def get_base64_event(self, url: str):
+        inpt = self.__get_list_event(url)
+        for i in inpt:
+            id = i.attrs.get("id")
+            if id is None or not re.match(r"^event_content_json_id_\d+$", id):
                 continue
-            if v in ("true", "false"):
-                data[k] = v == "true"
-            elif re.match(r"^\d+(\.\d+)?$", v):
-                data[k] = to_int(v)
-        return data
+            value = i.attrs.get("value")
+            if value is None or len(value.strip()) == 0:
+                continue
+            js = base64.b64decode(value).decode()
+            data: Dict = clean_js_obj(json.loads(js))
+            self.__base64[data['id']] = value
+            yield (data['id'], value, data)
 
-    @Cache("rec/evento/html/{}.html")
-    def get_evento_soup(self, id: int):
-        self.execute_script(f"show_event_modal({id})")
-        self.wait(Api.EVENTO, by=By.CSS_SELECTOR)
-        node = self.get_soup().select_one(Api.EVENTO)
-        self.click("btnModeClose")
-        return node
+    def __get_list_event(self, url: str):
+        self.get(url)
+        iframe = self.w.soup.select_one(Api.IFRAME)
+        if iframe is not None:
+            self.get(iframe.attrs["src"])
+        npts = self.w.soup.select('input[type="hidden"]')
+        if len(npts) > 0:
+            return npts
+        with PortalDriver("firefox") as w:
+            w.login()
+            w.get(url)
+            iframe = w.safe_wait(Api.IFRAME, by=By.CSS_SELECTOR, seconds=5)
+            if iframe is not None:
+                src = iframe.get_attribute("src")
+                w.driver.switch_to.frame(iframe)
+                iframe = src
+            w.wait("h2", by=By.CSS_SELECTOR)
+            w.waitjs("window.show_event_modal != null")
+            soup = w.get_soup(iframe)
+            return soup.select('input[type="hidden"]')
 
-    @Cache("rec/sesion/html/{}.html")
-    def get_sesion_soup(self, id: int):
-        url = Api.URLSES + str(id)
-        w = self.to_web()
-        w.get(url)
-        logger.info("GET "+url)
-        return w.soup
+    @Cache("rec/detail/{}.html")
+    def get_soup_detail(self, id: int):
+        self.get(Api.DETAIL, action='show', content=self.get_base64(id))
+        return self.w.soup
 
-    def get_sesion(self, id: int):
-        soup = self.get_sesion_soup(id)
+    def get_base64(self, id: int):
+        if id not in self.__base64:
+            for url in Api.CATALOG:
+                list(self.get_base64_event(url))
+                if id in self.__base64:
+                    return self.__base64[id]
+        return self.__base64[id]
+
+    def find_days(self, id: int):
+        arr = []
+        soup = self.get_soup_detail(id)
+        for a in soup.select(Api.BTNDAY):
+            href = a.attrs["href"]
+            if not href.startswith(Api.URLDAY):
+                raise ApiException("URL de sesion extraña: "+href)
+            _, did = href.split("=", 1)
+            if not did.isdigit():
+                raise ApiException("URL de sesion extraña: "+href)
+            arr.append((int(did), a))
+        ses: Set[Sesion] = set()
+        for did, a in arr:
+            ses.add(self.__get_day(did, a))
+        return tuple(sorted(ses, key=lambda s: (s.fecha, s.id)))
+
+    def __get_day(self, id: int, a: Tag):
+        div = a.find_parent("div", class_=re.compile(r".*\bbsesion\b.*"))
+        hm = get_text(a)
+        if hm is None or not re.match(r"^\d+:\d+$", hm):
+            hm = get_text(div.select_one("h3.horasesion"))
+        if hm is None or not re.match(r"^\d+:\d+$", hm):
+            return self.__visit_day(id)
+        fch = tuple(map(get_text, div.select("div.bfechasesion > p")))
+        if len(fch) != 3 or not fch[1].isdigit():
+            return self.__visit_day(id)
+        day = int(fch[1])
+        my = fch[0].split()
+        if len(my) != 2 or not my[1].isdigit():
+            return self.__visit_day(id)
+        year = int(my[1])
+        m = my[0].lower()[:3]
+        months = ("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "dic")
+        if m not in months:
+            return self.__visit_day(id)
+        month = months.index(m) + 1
+        h, m = map(int, hm.split(":"))
+        return Sesion(
+            id=id,
+            fecha=datetime(year, month, day, h, m, 0, 0).strftime("%Y-%m-%d %H:%M")
+        )
+
+    def __visit_day(self, id: int):
+        soup = self.get_soup_day(id)
         txts = tuple(t for t in map(get_text, soup.select("div.updated.published span")) if t is not None)
         fecha = None
         dia, hora = None, None
@@ -355,15 +386,9 @@ class Api(Driver):
             fecha = datetime(2000, 1, 1, *hora, 0, 0).strftime("%H:%M")
         return Sesion(id=id, fecha=fecha)
 
-    @cached_property
-    def eventos(self):
-        evs: Set[Evento] = set()
-        for url in Api.LISTAS:
-            evs = evs.union(self.get_eventos(url))
-        return tuple(sorted(evs))
-
-
-if __name__ == "__main__":
-    with Api("firefox") as api:
-        api.login()
-        list(api.eventos)
+    @Cache("rec/day/{}.html")
+    def get_soup_day(self, id: int):
+        url = Api.URLDAY + str(id)
+        self.get(url)
+        logger.info("GET "+url)
+        return self.w.soup

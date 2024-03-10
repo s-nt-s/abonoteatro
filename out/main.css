@@ -3,9 +3,6 @@ body {
   font-size: 11pt;
   margin: 0;
 }
-main {
-  margin: 8px;
-}
 header, footer {
   padding: 1em;
   clear: both;
@@ -37,12 +34,9 @@ header a, footer a {
 main {
   margin: auto;
   max-width: 420px;
-  padding: 0px 14px 0px 14px;
+  padding: 0px 1em 0px 1em;
 }
 
-div.evento {
-  margin-bottom: 16px;
-}
 div.evento > img {
   max-width:100%;
 }
@@ -61,4 +55,19 @@ a.rss:before {
   background-repeat: no-repeat;
   padding-left: 1.2em;
   content:"";
+}
+p.lugar {
+  text-align: right;
+}
+span.descuento {
+  text-decoration: line-through;
+}
+p.lugar:before {
+  content: "📍"
+}
+div.info  {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  margin-top: 5px;
+  margin-bottom: 10px;
 }
