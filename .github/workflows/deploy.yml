@@ -34,7 +34,7 @@ jobs:
       - name: RM
         run: rm -rf ./rec/
       - name: BUILD
-        continue-on-error: true
+        continue-on-error: false
         uses: nick-fields/retry@v2
         with:
           timeout_minutes: 40
