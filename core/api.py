@@ -10,6 +10,7 @@ import logging
 from functools import cached_property
 import base64
 import json
+from urllib.parse import quote
 from .util import clean_js_obj, clean_txt, get_obj, trim, get_text, get_or
 
 from .filemanager import FM
@@ -106,7 +107,7 @@ class Lugar(NamedTuple):
     def url(self):
         if self.direccion is None:
             return "#"
-        return "https://www.google.com/maps/place/" + self.direccion.replace(" ", "+")
+        return "https://www.google.com/maps/place/" + quote(self.direccion)
 
 
 class Evento(NamedTuple):
