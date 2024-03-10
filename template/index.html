@@ -20,7 +20,7 @@
         <img src="{{e.img}}" loading="lazy" alt="{{e.titulo}}"/>
         <div class="info">
           <p class="titulo">
-            <span title="{{e.precio}}€ -> {{precio}}€" class="descuento">{{e.descuento}}%</span>
+            <span title="{{e.precio}}€ -> {{precio}}€" class="descuento">{{e.precio | round | int}}€</span>
             <a href="./e/{{e.id}}">{{e.titulo}}</a>
           </p>
           <p class="lugar"><a href="{{e.lugar.url}}">{{e.lugar.txt}}</a></p>

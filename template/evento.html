@@ -6,7 +6,7 @@
   <meta content="width=device-width, initial-scale=1" name="viewport" />
   <meta name="Last-Modified" content="{{now.strftime('%Y-%m-%d %H:%M:%S')}}" />
   <link rel="stylesheet" href="../main.css" />
-  <title>{{e.title}}</title>
+  <title>{{e.titulo}}</title>
 </head>
 
 <body>
@@ -16,8 +16,8 @@
       <img src="{{e.img}}" loading="lazy" alt="{{e.titulo}}"/>
       <div class="info">
         <p class="titulo">
-          <span title="{{e.precio}}€ -> {{precio}}€" class="descuento">{{e.descuento}}%</span>
-          {{e.titulo}}
+          <span title="{{e.precio}}€ -> {{precio}}€" class="descuento">{{e.precio | round | int}}€</span>
+          <strong>{{e.titulo}}</strong>
         </p>
         <p class="lugar"><a href="{{e.lugar.url}}">{{e.lugar.txt}}</a></p>
       </div>
