@@ -183,7 +183,7 @@ class Evento(NamedTuple):
                 if len(dh[0]) == 10:
                     dt = date(*map(int, dh[0].split("-")))
                     dia = "LMXJVSD"[dt.weekday()] + \
-                        f' {dt.day:>2}-'+MONTHS[dt.month]
+                        f' {dt.day:>2}-'+MONTHS[dt.month-1]
             if dia not in dias:
                 dias[dia] = []
             dias[dia].append(e)
