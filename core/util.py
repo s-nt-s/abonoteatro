@@ -2,6 +2,7 @@ import re
 from typing import List, Dict, Union
 from bs4 import Tag, BeautifulSoup
 from minify_html import minify
+import unicodedata
 
 re_sp = re.compile(r"\s+")
 
@@ -98,7 +99,7 @@ def __simplify_html(html: str):
         href = a.attrs.get("href")
         if href in (None, "", "#"):
             a.unwrap()
-    useful = ("href", "src")
+    useful = ("href", "src", "alt", "title", "for", "name", "id")
     for n in tuple(soup.select(":scope *")):
         if n.attrs:
             n.attrs = {k: v for k, v in n.attrs.items() if k in useful}
@@ -142,7 +143,8 @@ def clean_txt(s: str):
     if s == s.upper():
         s = s.title()
     s = re.sub(r"\\", "", s)
-    s = re.sub(r"´", "'", s)
+    s = re.sub(r"[´”]", "'", s)
+    s = unicodedata.normalize('NFC', s)
     return s
 
 
