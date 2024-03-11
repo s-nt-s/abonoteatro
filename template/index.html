@@ -28,7 +28,7 @@
     {% for e in eventos %}
     <div id="e{{e.id}}" class="evento {{e.categoria | simplify}}">
       <div class="img">
-        <img src="{{e.img}}" loading="lazy" alt="{{e.titulo}}" />
+        <img src="{{e.img}}" alt="{{e.titulo}}" />
         <span class="categoria">{{e.categoria.title()}}</span>
       </div>
       <div class="info">

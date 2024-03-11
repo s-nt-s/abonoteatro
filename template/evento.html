@@ -22,7 +22,7 @@
   </header>
   <main>
     <div id="e{{e.id}}" class="evento">
-      <img src="{{e.img}}" loading="lazy" alt="{{e.titulo}}" />
+      <img src="{{e.img}}" alt="{{e.titulo}}" />
       <div class="info">
         <p class="titulo">
           {% if e.precio>0 %}<span title="{{e.precio|twoDec}}€ -> {{precio.abonado|twoDec}}€" class="descuento">{{e.precio | round | int}}€</span>
