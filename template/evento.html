@@ -1,59 +1,49 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta content="width=device-width, initial-scale=1" name="viewport" />
-    <meta
-      name="Last-Modified"
-      content="{{now.strftime('%Y-%m-%d %H:%M:%S')}}"
-    />
-    <link rel="stylesheet" href="../main.css" />
-    <title>{{e.titulo}}</title>
-  </head>
 
-  <body>
-    {#% with root=".." %} {% include "header.html" %} {% endwith %#}
-    <header>
-      <nav>
-        <ul>
-          <li><a href="../">Eventos</a></li><li><a href="../?{{e.categoria | simplify}}">{{e.categoria.title()}}</a></li><li>{{e.titulo}}</li>
-        </ul>
-      </nav>
-    </header>
-    <main>
-      <div id="e{{e.id}}" class="evento">
-        <img src="{{e.img}}" loading="lazy" alt="{{e.titulo}}" />
-        <div class="info">
-          <p class="titulo">
-            <span title="{{e.precio}}€ -> {{precio}}€" class="descuento"
-              >{{e.precio | round | int}}€</span
-            >
-            <strong>{{e.titulo}}</strong>
-          </p>
-          <p class="lugar"><a href="{{e.lugar.url}}">{{e.lugar.txt}}</a></p>
-        </div>
-        {% if e.sesiones %}
-          {% if e.dias_hora | length > 1 %}
-          <ol class="sesiones">
-          {% for dia, sesiones in e.dias_hora %}
-          <li>
-            <pre>{{dia.strip()}}</pre>:{% for s in sesiones %}
-            <a href="{{s.url}}">{{(s.hora or "comprar")}}</a>{%endfor%}
-          </li>
-          {% endfor %}
-        </ol>
-          {% else %}
-          {% for dia, sesiones in e.dias_hora %}
-          <p class="sesiones">
-            {{dia.strip()}}:{% for s in sesiones %}
-            <a href="{{s.url}}">{{(s.hora or "comprar")}}</a>{%endfor%}
-          </p>
-          {% endfor %}
-          {% endif %}
-        {% endif %}
-        {% if e.condiciones %} {{e.condiciones | safe}} {% endif %}
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1" name="viewport" />
+  <meta name="Last-Modified" content="{{now.strftime('%Y-%m-%d %H:%M:%S')}}" />
+  <link rel="stylesheet" href="../main.css" />
+  <title>{{e.titulo}}</title>
+</head>
+
+<body>
+  {#% with root=".." %} {% include "header.html" %} {% endwith %#}
+  <header>
+    <nav>
+      <ul>
+        <li><a href="../">Eventos</a></li>
+        <li><a href="../?{{e.categoria | simplify}}">{{e.categoria.title()}}</a></li>
+        <li>{{e.titulo}}</li>
+      </ul>
+    </nav>
+  </header>
+  <main>
+    <div id="e{{e.id}}" class="evento">
+      <img src="{{e.img}}" loading="lazy" alt="{{e.titulo}}" />
+      <div class="info">
+        <p class="titulo">
+          <span title="{{e.precio}}€ -> {{precio}}€" class="descuento">{{e.precio | round | int}}€</span>
+          <strong>{{e.titulo}}</strong>
+        </p>
+        <p class="lugar"><a href="{{e.lugar.url}}">{{e.lugar.txt}}</a></p>
       </div>
-    </main>
-    {% with root=".." %} {% include "footer.html" %} {% endwith %}
-  </body>
+      {% if e.sesiones %}
+      <ol class="sesiones">
+        {% for dia, sesiones in e.dias_hora %}
+        <li>
+          <pre>{{dia.strip()}}</pre>:{% for s in sesiones %}
+          <a href="{{s.url}}">{{(s.hora or "comprar")}}</a>{%endfor%}
+        </li>
+        {% endfor %}
+      </ol>
+      {% endif %}
+      {% if e.condiciones %} {{e.condiciones | safe}} {% endif %}
+    </div>
+  </main>
+  {% with root=".." %} {% include "footer.html" %} {% endwith %}
+</body>
+
 </html>

@@ -37,7 +37,7 @@ main {
   padding: 0px 1em 0px 1em;
 }
 
-div.evento > img {
+div.evento img {
   max-width:100%;
 }
 div.evento > div.info p {
@@ -110,4 +110,19 @@ ol.sesiones li {
   list-style-type: none;
   padding: 0;
   margin: 0;
+}
+
+div.img {
+  position: relative;
+  display: inline-block;
+}
+
+span.categoria {
+  position: absolute;
+  bottom: 4px;
+  margin: 0;
+  left: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  padding: 5px; /* Espacio interior alrededor del texto */
 }
