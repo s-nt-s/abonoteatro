@@ -25,8 +25,11 @@
       <img src="{{e.img}}" loading="lazy" alt="{{e.titulo}}" />
       <div class="info">
         <p class="titulo">
-          <span title="{{e.precio}}€ -> {{precio}}€" class="descuento">{{e.precio | round | int}}€</span>
-          <strong>{{e.titulo}}</strong>
+          {% if e.precio>0 %}<span title="{{e.precio|twoDec}}€ -> {{precio.abonado|twoDec}}€" class="descuento">{{e.precio | round | int}}€</span>
+          {% else %}<span title="¿?€ -> {{precio.abonado|twoDec}}€" class="descuento">¿?€</span>
+          {% endif %}
+          <strong>{{e.titulo}}</strong><br/>
+          <span>{{precio.abonado|twoDec}}€</span> abonado, {{precio.compa|twoDec}}€ acompañante
         </p>
         <p class="lugar"><a href="{{e.lugar.url}}">{{e.lugar.txt}}</a></p>
       </div>

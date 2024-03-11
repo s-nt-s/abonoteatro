@@ -24,11 +24,16 @@ categorias = {}
 for e in eventos:
     categorias[e.categoria] = categorias.get(e.categoria, 0) +1
 
+precio = dict(
+    abonado=Api.PRICE,
+    compa=Api.COMPANION
+)
+
 j = Jnj2("template/", "out/")
 j.save(
     "index.html",
     eventos=eventos,
-    precio=Api.PRICE,
+    precio=precio,
     now=now,
     categorias=categorias,
     count=len(eventos)
@@ -39,7 +44,7 @@ for e in eventos:
         "evento.html",
         destino=f"e/{e.id}.html",
         e=e,
-        precio=Api.PRICE,
+        precio=precio,
         now=now,
         count=len(eventos)
     )

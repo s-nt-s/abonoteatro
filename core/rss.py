@@ -62,12 +62,16 @@ class EventosRss:
         return rss
 
     def iter_items(self):
-        for p in self.eventos:
-            link = f'{self.root}/e/{p.id}'
+        for e in self.eventos:
+            link = f'{self.root}/e/{e.id}'
             yield rfeed.Item(
-                title=f'{int(round(p.precio))}€ {p.titulo}',
+                title=f'{e.titulo}',
                 link=link,
                 guid=rfeed.Guid(link),
-                categories=rfeed.Category(p.categoria)
+                categories=rfeed.Category(e.categoria),
+                description=dedent(f'''
+                    {int(round(e.precio))}€ {e.categoria},
+                    <a href="{e.lugar.url}">{e.lugar.txt} ({e.lugar.direccion})</a>
+                ''').strip().replace("Nonem², ", "").replace("\n", "<br/>"),
                 #pubDate=datetime(*map(int, p.fecha.split("-")))
             )

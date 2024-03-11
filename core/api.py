@@ -108,7 +108,7 @@ class Lugar(NamedTuple):
         muni = js['municipio']
 
         return Lugar(
-            txt=js['recinto'],
+            txt=clean_txt(js['recinto']),
             direccion=trim((dire or "") + ' ' + (muni or ""))
         )
 
@@ -241,6 +241,7 @@ class Api:
     URLDAY = 'https://compras.abonoteatro.com/compra/?eventocurrence='
     DETAIL = 'https://www.abonoteatro.com/catalogo/detalle_evento.php'
     PRICE = 3.50
+    COMPANION = 3.50 + 5
     CATALOG = (
         "https://compras.abonoteatro.com/teatro/",
         "https://compras.abonoteatro.com/cine-y-eventos/",
