@@ -16,7 +16,7 @@
   <main>
     <select id="categoria">
       <option value="">Todos</option>
-      {% for c, num in categorias.items() %}
+      {% for c, num in categorias.items()|sort %}
       {% if c != "otros"%}
       <option value="{{c | simplify }}">{{c.title()}} ({{num}})</option>
       {% endif %}
