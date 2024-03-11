@@ -22,13 +22,6 @@ re_sp = re.compile(r"\s+")
 MONTHS = ("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "dic")
 
 
-def get_words(s: str):
-    s = re.sub(r"[,\.:]", " ", s)
-    s = re_sp.sub(" ", s).strip().lower()
-    s = unidecode(s)
-    return tuple(s.split())
-
-
 class TupleCache(Cache):
     def __init__(self, *args, builder=None, **kwargs):
         if not callable(builder):
@@ -423,60 +416,103 @@ class Api:
         return self.w.soup
 
     def find_category(self, url: str, js: Dict):
-        def _set(s: str):
-            return set(get_words(s))
+        def _plan_text(s: str):
+            if s is None:
+                return None
+            faken = "&%%%#%%%#%%#%%%%%%&"
+            s = re.sub(r"[,\.:]", " ", s).lower()
+            s = s.replace("ñ", faken)
+            s = unidecode(s)
+            s = s.replace(faken, "ñ")
+            s = re_sp.sub(" ", s).strip()
+            if len(s) == 0:
+                return None
+            return s
 
         def _txt(s: str):
             if s is not None and len(s.strip()) > 0:
                 soup = BeautifulSoup(s, "html.parser")
-                txt = get_text(soup)
-                if txt is not None:
-                    return get_words(txt)
+                return get_text(soup)
+
+        def _find(s: str, *args):
+            if s is None or len(s) == 0:
+                return False
+            for r in args:
+                if re.search(r"\b" + r + r"\b", s):
+                    return True
+            return False
+
+        path = url.rstrip("/").split("/")[-1]
+        if path == "cine_peliculas.php":
+            return "cine"
 
         monimpro = "monologo / impro"
         musica = "musical / concierto"
-        path = url.rstrip("/").split("/")[-1]
-        name = js['name'] + " "+(js['sub'] or "")
-        info = _txt((js['info'] or "")+" "+(js['condicion'] or ""))
-        if path == "cine_peliculas.php":
-            return "cine"
-        if _set(name+" "+(js['recinto'] or "")).intersection(("autocine", "cinesa", "cinesur", "yelmo", "mk2")):
-            return "cine"
-        if path == "cine-y-eventos" and _set(name).intersection(("cines", )):
-            return "cine"
-        if _set(name).intersection(("exposicion", "exposiciones", "museum", "museo")):
-            return "exposición / museo"
-        if _set(name).intersection(("magic", "magia", "mago", "mangos")):
-            return "magia"
-        if _set(name).intersection(("flamenco", )):
-            return "flamenco"
-        if _set(name).intersection(("bingo", "drag")):
+        expomus = "exposición / museo"
+        name = _plan_text(js['name'] + " "+(js['sub'] or ""))
+        info = _plan_text(_txt((js['info'] or "")+" "+(js['condicion'] or "")))
+        name_info = (name+" "+(info or "")).strip()
+        recinto = _plan_text(js['recinto']) or ""
+
+        if recinto == "wizink center baloncesto":
             return "otros"
-        if path == "teatro" and _set(name).intersection(("musical", "concierto")):
-            return musica
-        if _set(name).intersection(("monologuistas", "impro", "comedia", "comedy", "monologo", "monologos", "openmic", "open-mic", "standup", "stand-up")):
+        if _find(name+" "+recinto, "autocine", "cinesa", "cinesur", "yelmo", "mk2"):
+            return "cine"
+        if path == "cine-y-eventos" and _find(name, "cines", ):
+            return "cine"
+        if _find(info, "jardin botanico"):
+            return "otros"
+        if _find(name, "exposicion", "exposiciones", "museum", "museo"):
+            return expomus
+        if _find(name, "magic", "magia", "magos?", "mentalistas?", "hipnosis"):
+            return "magia"
+        if _find(name, "flamenco"):
+            return "flamenco"
+        if _find(name, "bingo", "drag", "karaoke"):
+            return "otros"
+        if path == "teatro":
+            if _find(info, "monologo narrativo"):
+                return "teatro"
+            if _find(name, "impro", "el humor de"):
+                return monimpro
+            if _find(name, "musical", "concierto", r"boleros?", "orquesta"):
+                return musica
+        if _find(recinto, "houdini") and _find(info, "magia", "mago", "mentalista"):
+            return "magia"
+        if path == "teatro":
+            if _find(info, "mentalismo"):
+                return "magia"
+            if _find(name_info, "tributo") and _find(name_info, "temas", "grandes exitos", "cantantes", "pop", "bailaras", "cantaras"):
+                return musica
+            if _find(recinto, "humor") and _find(info, "humor"):
+                return monimpro
+        if _find(name_info, "stand ?up", "stand-up", "open-mic", "open ?mic", r"monologos?", "monologuistas", r"impromonologos?", "comedia pura"):
             return monimpro
-        line = " ".join(get_words(name))
-        if "monologo" in line or "open mic" in line or "stand up" in line:
+        if _find(name_info, "clown") and _find(name_info, "humor"):
             return monimpro
-        if info:
-            nf = " ".join(info)
-            if set(info).intersection(("standup", "stand-up", "open-mic", "openmic", "monologo", "monologos")):
+        if path == "teatro":
+            if _find(info, "show de comedia", "humor blanco", "comedia totalmente improvisada", "comico ocasional", "improvisacion teatral", "comedy club", "mas divertida de tu vida", "show improvisado"):
                 return monimpro
-            if "open mic" in nf or "stand up" in nf:
+            if _find(info, "comedias musicales", "comedia musical", "musical", "concierto", "percusion", "grandes musicales"):
+                return musica
+            if _find(info, "magia", "mago", "mentalista"):
+                return "magia"
+            if _find(info, "chic comedy", "humor inteligente"):
                 return monimpro
-            if path == "teatro" and (("show de comedia" in nf) or ("humor blanco" in nf) or ("comedia totalmente improvisada" in nf) or ("comico ocasional" in nf) or ("improvisacion teatral" in nf)):
+            if recinto == "sala de humor fuencarral":
                 return monimpro
-            if "jardin botanico" in nf:
+            if _find(info, "humor", "humores") and _find(info, "improvisar", "improvisacion", "comicos"):
+                return monimpro
+            if _find(info, "exposicion") and _find(info, "expondran") and _find(info, "obras"):
+                return expomus
+            if _find(info, "show") and _find(info, "comicos?"):
+                return monimpro
+            if _find(name, "el show de"):
+                return monimpro
+            if _find(name, "microteatros"):
                 return "otros"
-            if path == "teatro" and (("comedias musicales" in nf) or ("comedia musical" in nf)):
-                return musica
-            if _set(js['recinto']).intersection(("houdini", )) and set(info).intersection(("magia", "mago", "mentalista")):
-                return "magia"
-            if path == "teatro" and set(info).intersection(("musical", "concierto", "percusion")):
-                return musica
-            if path == "teatro" and set(info).intersection(("magia", "mago", "mentalista")):
-                return "magia"
+            if _find(info, "podcast"):
+                return "otros"
         if path == "teatro":
             return "teatro"
         return "otros"
