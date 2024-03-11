@@ -1,6 +1,7 @@
 import re
 from typing import List, Dict, Union
 from bs4 import Tag, BeautifulSoup
+from minify_html import minify
 
 re_sp = re.compile(r"\s+")
 
@@ -10,7 +11,7 @@ tag_trim = ('li', 'th', 'td', 'div', 'caption', 'h[1-6]')
 tag_right = ('p',)
 heads = ("h1", "h2", "h3", "h4", "h5", "h6")
 block = heads + ("p", "div", "table", "article")
-inline = ("span", "strong", "b", "del")
+inline = ("span", "strong", "i", "em", "u", "b", "del")
 
 
 def clean_html(html: str):
@@ -65,6 +66,31 @@ def clean_html(html: str):
 
 
 def simplify_html(html: str):
+    while True:
+        new_html = __simplify_html(html)
+        if new_html == html:
+            return new_html
+        html = new_html
+
+
+def __simplify_html(html: str):
+    html = minify(
+        html,
+        do_not_minify_doctype=True,
+        ensure_spec_compliant_unquoted_attribute_values=True,
+        keep_spaces_between_attributes=True,
+        keep_html_and_head_opening_tags=True,
+        keep_closing_tags=True,
+        minify_js=True,
+        minify_css=True,
+        remove_processing_instructions=True
+    )
+    blocks = ("html", "head", "body", "style", "script", "meta", "p", "div", "main", "header", "footer",
+              "table", "tr", "tbody", "thead", "tfoot" "ol", "li", "ul", "h1", "h2", "h3", "h4", "h5", "h6")
+    html = re.sub(r"<(" + "|".join(blocks) +
+                  "\b)([^>]*)>", r"\n<\1\2>\n", html)
+    html = re.sub(r"</(" + "|".join(blocks) + ")>", r"\n</\1>\n", html)
+    html = re.sub(r"\n\n+", r"\n", html).strip()
     soup = BeautifulSoup("<faketag>"+html+"<faketag>", "html.parser")
     for n in soup.findAll(["span", "font"]):
         n.unwrap()
@@ -76,6 +102,14 @@ def simplify_html(html: str):
     for n in tuple(soup.select(":scope *")):
         if n.attrs:
             n.attrs = {k: v for k, v in n.attrs.items() if k in useful}
+    for n in soup.findAll(block + inline):
+        chls = n.select(":scope > *")
+        if len(chls) != 1:
+            continue
+        c = chls[0]
+        if c.name != n.name or get_text(c) != get_text(n):
+            continue
+        n.unwrap()
     for n in soup.findAll("faketag"):
         n.unwrap()
     return clean_html(str(soup))
