@@ -11,7 +11,7 @@ from functools import cached_property
 import base64
 import json
 from urllib.parse import quote
-from .util import clean_js_obj, clean_txt, get_obj, trim, get_text, get_or
+from .util import clean_js_obj, clean_txt, get_obj, trim, get_text, get_or, clean_html, simplify_html
 from unidecode import unidecode
 
 from .filemanager import FM
@@ -158,7 +158,7 @@ class Evento(NamedTuple):
     def html(self) -> Tag:
         soup = FM.cached_load(f"rec/detail/{self.id}.html")
         if soup:
-            return BeautifulSoup(str(soup), "html.parser")
+            return BeautifulSoup(clean_html(str(soup)), "html.parser")
 
     @property
     def condiciones(self):
@@ -168,6 +168,7 @@ class Evento(NamedTuple):
         for d in n.findAll("div"):
             if get_text(d) == "Ver menos":
                 d.extract()
+        n = BeautifulSoup(simplify_html(str(n)), "html.parser")
         n.attrs.clear()
         n.attrs["class"] = "condiciones"
         return str(n)
@@ -181,7 +182,8 @@ class Evento(NamedTuple):
                 dh = e.fecha.split(" ")
                 if len(dh[0]) == 10:
                     dt = date(*map(int, dh[0].split("-")))
-                    dia = "LMXJVSD"[dt.weekday()]+f' {dt.day:>2}-'+MONTHS[dt.month]
+                    dia = "LMXJVSD"[dt.weekday()] + \
+                        f' {dt.day:>2}-'+MONTHS[dt.month]
             if dia not in dias:
                 dias[dia] = []
             dias[dia].append(e)
@@ -215,7 +217,8 @@ class PortalDriver(Driver):
         self.val("nabonadologin", user)
         self.val("contrasenalogin", psw)
         self.click('button.cmplz-deny', by=By.CSS_SELECTOR)
-        self.click('#dformrlogin input[type="button"].buyBtn', by=By.CSS_SELECTOR)
+        self.click(
+            '#dformrlogin input[type="button"].buyBtn', by=By.CSS_SELECTOR)
         self.wait(Api.IFRAME, by=By.CSS_SELECTOR)
         logger.info("login OK")
 
@@ -388,12 +391,14 @@ class Api:
         h, m = map(int, hm.split(":"))
         return Sesion(
             id=id,
-            fecha=datetime(year, month, day, h, m, 0, 0).strftime("%Y-%m-%d %H:%M")
+            fecha=datetime(year, month, day, h, m, 0,
+                           0).strftime("%Y-%m-%d %H:%M")
         )
 
     def __visit_day(self, id: int):
         soup = self.get_soup_day(id)
-        txts = tuple(t for t in map(get_text, soup.select("div.updated.published span")) if t is not None)
+        txts = tuple(t for t in map(get_text, soup.select(
+            "div.updated.published span")) if t is not None)
         fecha = None
         dia, hora = None, None
         for txt in txts:
@@ -434,13 +439,13 @@ class Api:
         info = _txt((js['info'] or "")+" "+(js['condicion'] or ""))
         if path == "cine_peliculas.php":
             return "cine"
-        if _set(name).intersection(("autocine", "cinesa", "cinesur", "yelmo", "mk2")):
+        if _set(name+" "+(js['recinto'] or "")).intersection(("autocine", "cinesa", "cinesur", "yelmo", "mk2")):
             return "cine"
         if path == "cine-y-eventos" and _set(name).intersection(("cines", )):
             return "cine"
         if _set(name).intersection(("exposicion", "exposiciones", "museum", "museo")):
             return "exposición / museo"
-        if _set(name).intersection(("magic", "magia", "mago")):
+        if _set(name).intersection(("magic", "magia", "mago", "mangos")):
             return "magia"
         if _set(name).intersection(("flamenco", )):
             return "flamenco"
@@ -458,6 +463,8 @@ class Api:
             if set(info).intersection(("standup", "stand-up", "open-mic", "openmic", "monologo", "monologos")):
                 return monimpro
             if "open mic" in nf or "stand up" in nf:
+                return monimpro
+            if path == "teatro" and (("show de comedia" in nf) or ("humor blanco" in nf) or ("comedia totalmente improvisada" in nf) or ("comico ocasional" in nf) or ("improvisacion teatral" in nf)):
                 return monimpro
             if "jardin botanico" in nf:
                 return "otros"

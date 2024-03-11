@@ -56,8 +56,29 @@ def clean_html(html: str):
         r"\s*(<meta[^>]+>)\s*", re.MULTILINE | re.DOTALL | re.UNICODE)
     h = r.sub(r"\n\1\n", h)
     r = re.compile(r"\n\n+", re.MULTILINE | re.DOTALL | re.UNICODE)
+    h = re.sub(r"<p([^<>]*)>\s*<br/?>\s*", r"<p\1>", h,
+               flags=re.MULTILINE | re.DOTALL | re.UNICODE)
+    h = re.sub(r"\s*<br/?>\s*</p>", "</p>", h,
+               flags=re.MULTILINE | re.DOTALL | re.UNICODE)
     h = r.sub(r"\n", h)
     return h
+
+
+def simplify_html(html: str):
+    soup = BeautifulSoup("<faketag>"+html+"<faketag>", "html.parser")
+    for n in soup.findAll(["span", "font"]):
+        n.unwrap()
+    for a in soup.findAll("a"):
+        href = a.attrs.get("href")
+        if href in (None, "", "#"):
+            a.unwrap()
+    useful = ("href", "src")
+    for n in tuple(soup.select(":scope *")):
+        if n.attrs:
+            n.attrs = {k: v for k, v in n.attrs.items() if k in useful}
+    for n in soup.findAll("faketag"):
+        n.unwrap()
+    return clean_html(str(soup))
 
 
 def clean_js_obj(obj: Union[List, Dict]):
