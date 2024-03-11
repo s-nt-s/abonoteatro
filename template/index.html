@@ -33,7 +33,9 @@
       </div>
       <div class="info">
         <p class="titulo">
-          <span title="{{e.precio}}€ -> {{precio}}€" class="descuento">{{e.precio | round | int}}€</span>
+          {% if e.precio>0 %}<span title="{{e.precio|twoDec}}€ -> {{precio.abonado|twoDec}}€" class="descuento">{{e.precio | round | int}}€</span>
+          {% else %}<span title="¿?€ -> {{precio.abonado|twoDec}}€" class="descuento">¿?€</span>
+          {% endif %}
           <a href="./e/{{e.id}}">{{e.titulo}}</a>
         </p>
         <p class="lugar"><a href="{{e.lugar.url}}">{{e.lugar.txt}}</a></p>

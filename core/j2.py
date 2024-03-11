@@ -65,6 +65,12 @@ def toTag(html, *args):
     return tag
 
 
+def twoDec(i: float):
+    if int(i) == i:
+        return str(i)
+    return '%0.2f' % i
+
+
 def get_default_target_links(soup: bs4.Tag):
     def _isRemote(href: str):
         proto = href.split("://")[0].lower()
@@ -97,6 +103,7 @@ class Jnj2():
         self.j2_env.filters['to_attr'] = to_attr
         self.j2_env.filters['to_value'] = to_value
         self.j2_env.filters['simplify'] = simplify
+        self.j2_env.filters['twoDec'] = twoDec
         self.destino = destino
         self.pre = pre
         self.post = post
