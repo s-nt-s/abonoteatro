@@ -262,16 +262,16 @@ class Api:
                 self.__w = w.to_web()
         return self.__w
 
-    @cached_property
-    def events(self):
+    @TupleCache("rec/eventos.json", builder=Evento.build)
+    def get_events(self):
         evs: Dict[int, Evento] = {}
         for url in Api.CATALOG:
-            for e in self.get_events(url):
+            for e in self.get_events_from(url):
                 if e.id not in evs or e.precio > evs[e.id].precio:
                     evs[e.id] = e
         return tuple(sorted(evs.values()))
 
-    def get_events(self, url):
+    def get_events_from(self, url):
         evs: Set[Evento] = set()
         for js in self.get_js_events(url):
             if js['name'] == "Compra o Regala ABONOTEATRO":
