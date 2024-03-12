@@ -75,6 +75,7 @@ def simplify_html(html: str):
 
 
 def __simplify_html(html: str):
+    html = re_sp.sub(" ", html)
     html = minify(
         html,
         do_not_minify_doctype=True,
@@ -99,7 +100,7 @@ def __simplify_html(html: str):
         href = a.attrs.get("href")
         if href in (None, "", "#"):
             a.unwrap()
-    useful = ("href", "src", "alt", "title", "for", "name", "id")
+    useful = ("href", "src", "alt", "title")
     for n in tuple(soup.select(":scope *")):
         if n.attrs:
             n.attrs = {k: v for k, v in n.attrs.items() if k in useful}

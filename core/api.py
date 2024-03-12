@@ -471,6 +471,8 @@ class Api:
         if _find(name, "bingo", "drag", "karaoke"):
             return "otros"
         if path == "teatro":
+            if _find(info, "monologo narrativo"):
+                return "teatro"
             if _find(name, "impro", "el humor de"):
                 return monimpro
             if _find(name, "musical", "concierto", r"boleros?", "orquesta"):
@@ -480,7 +482,7 @@ class Api:
         if path == "teatro":
             if _find(info, "mentalismo"):
                 return "magia"
-            if _find(name_info, "tributo") and _find(name_info, "temas", "grandes exitos"):
+            if _find(name_info, "tributo") and _find(name_info, "temas", "grandes exitos", "cantantes", "pop", "bailaras", "cantaras"):
                 return musica
             if _find(recinto, "humor") and _find(info, "humor"):
                 return monimpro

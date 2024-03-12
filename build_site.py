@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 now = datetime.now()
 
 api = Api()
-eventos = sorted(api.get_events(), key=lambda e: (-e.precio, -len(e.sesiones)))
+eventos = sorted(api.get_events(), key=lambda e: (-e.precio, -len(e.sesiones), e.txt, e.id))
 categorias = {}
 for e in eventos:
     categorias[e.categoria] = categorias.get(e.categoria, 0) + 1
