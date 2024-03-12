@@ -6,9 +6,10 @@
   <meta content="width=device-width, initial-scale=1" name="viewport" />
   <title>Abono Teatro</title>
   <meta name="Last-Modified" content="{{now.strftime('%Y-%m-%d %H:%M:%S')}}" />
-  <link rel="stylesheet" href="main.css" />
-  <script src="dev.js" type="text/javascript"></script>
-  <script src="main.js" type="text/javascript"></script>
+  <link href="rec/main.css" rel="stylesheet"/>
+  <script src="rec/img.js" type="text/javascript"></script>
+  <script src="rec/dev.js" type="text/javascript"></script>
+  <script src="rec/main.js" type="text/javascript"></script>
 </head>
 
 <body>
@@ -28,7 +29,7 @@
     {% for e in eventos %}
     <div id="e{{e.id}}" class="evento {{e.categoria | simplify}}">
       <div class="img">
-        <img src="{{e.img}}" alt="{{e.titulo}}" />
+        <div><img src="{{e.img}}" alt="{{e.titulo}}" /></div>
         <span class="categoria">{{e.categoria.title()}}</span>
       </div>
       <div class="info">

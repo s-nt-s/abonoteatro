@@ -2,6 +2,7 @@ body {
   font-family: arial,sans serif;
   font-size: 11pt;
   margin: 0;
+  --max-width: 500px;
 }
 header, footer {
   padding: 1em;
@@ -33,13 +34,10 @@ header a, footer a {
 }
 main {
   margin: auto;
-  max-width: 500px;
+  max-width: var(--max-width);
   padding: 0px 1em 0px 1em;
 }
 
-div.evento img {
-  max-width:100%;
-}
 div.evento > div.info p {
   margin: 0;
 }
@@ -112,17 +110,34 @@ ol.sesiones li {
   margin: 0;
 }
 
+div.evento img {
+  max-width:100%;
+  vertical-align: bottom;
+}
+
 div.img {
   position: relative;
-  display: inline-block;
 }
 
 span.categoria {
   position: absolute;
-  bottom: 5px;
+  bottom: 0px;
   margin: 0;
   left: 0;
   background-color: rgba(0, 0, 0, 0.5);
   color: white;
   padding: 5px;
+}
+div.img > div {
+  text-align: center;
+}
+div.img > div:has(img.loaded) {
+  background-color: #202020;
+}
+div.evento img:not(.loaded) {
+  max-height:250px;
+  opacity: 0;
+}
+div.evento img.portrait {
+  max-height:calc(min(var(--max-width), 100vw) * 9 / 16);
 }
