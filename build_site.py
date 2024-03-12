@@ -6,7 +6,7 @@ from datetime import datetime
 from core.log import config_log
 from core.rss import EventosRss
 import logging
-
+from core.img import DwnImage
 import argparse
 
 parser = argparse.ArgumentParser(
@@ -28,6 +28,13 @@ precio = dict(
     abonado=Api.PRICE,
     compa=Api.COMPANION
 )
+
+downloader = DwnImage(quality=90, max_width=500, max_height=280)
+
+for i, e in enumerate(eventos):
+    img = f"img/{e.id}.jpg"
+    if downloader.dwn(e.img, "out/"+img):
+        eventos[i] = e.merge(img=img)
 
 j = Jnj2("template/", "out/")
 j.save(
