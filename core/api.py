@@ -184,12 +184,15 @@ class Evento(NamedTuple):
 
     @staticmethod
     def create(js: Dict, detail: Tag, categoria: str, sesiones: Tuple[Sesion]):
+        precio = max(0, (js.get('precio') or 0), (js.get('pvp') or 0))
+        if int(precio) == precio:
+            precio = int(precio)
         return Evento(
             id=js['id'],
             txt=clean_txt(js['name']),
             subtitulo=clean_txt(js['sub']),
             img=js['image'],
-            precio=get_or(js, 'precio', 'pvp'),
+            precio=precio,
             lugar=Lugar.create(js),
             sesiones=sesiones,
             categoria=categoria
