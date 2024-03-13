@@ -1,7 +1,8 @@
-document.addEventListener("DOMContentLoaded", function() {
-    if (document.location.protocol!="file:") return;
-    Array.from(document.getElementsByTagName("a")).forEach(a=> {
-        if (a.protocol!="file:") return;
+document.addEventListener("DOMContentLoaded", function () {
+    document.body.classList.add("js");
+    if (document.location.protocol != "file:") return;
+    Array.from(document.getElementsByTagName("a")).forEach(a => {
+        if (a.protocol != "file:") return;
         if (a.pathname.endsWith("/")) {
             a.pathname = a.pathname + "index.html"
             return;

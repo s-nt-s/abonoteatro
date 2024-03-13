@@ -134,7 +134,7 @@ div.img > div {
 div.img > div:has(img.loaded) {
   background-color: #202020;
 }
-div.evento img:not(.loaded) {
+body.js div.evento img:not(.loaded) {
   max-height:250px;
   opacity: 0;
 }

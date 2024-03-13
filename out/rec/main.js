@@ -7,7 +7,7 @@ function filtrar() {
     if (categ.length > 0) document.querySelectorAll("div.evento:not(."+categ+")").forEach(e=>{
         e.style.display = 'none';
     })
-    
+
     const title = document.querySelector("title");
     const txt = select.selectedOptions[0].textContent.trim().replace(/\s*\(\d+\)\s*$/, "");
     if (categ.length == 0 || txt.length == 0)  title.textContent = window.__title__;
@@ -25,7 +25,7 @@ function filtrar() {
     history.pushState(categ, "", url+'?'+categ);
 }
 
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
     window.__title__ = document.querySelector("title").textContent.trim();
     const value = document.location.search.substring(1);
     const categ = document.getElementById("categoria");
