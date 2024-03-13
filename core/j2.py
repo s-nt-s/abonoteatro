@@ -1,16 +1,19 @@
 import json
-import os
 import re
 from datetime import date, datetime
 from urllib.parse import quote_plus
 from minify_html import minify
 from unidecode import unidecode
+from os.path import relpath, dirname, exists, isfile
+from os import environ, makedirs
 
 import bs4
 from jinja2 import Environment, FileSystemLoader
 
 re_br = re.compile(r"<br/>(\s*</)")
 re_sp = re.compile(r"\s+")
+PAGE_URL = environ['PAGE_URL']
+REPO_URL = environ['REPO_URL']
 
 
 def simplify(s: str):
@@ -108,14 +111,18 @@ class Jnj2():
         self.pre = pre
         self.post = post
         self.lastArgs = None
-        self.minify = os.environ.get("MINIFY") == "1"
+        self.minify = environ.get("MINIFY") == "1"
 
     def save(self, template, destino=None, parse=None, **kwargs):
         self.lastArgs = kwargs
         if destino is None:
             destino = template
         out = self.j2_env.get_template(template)
-        html = out.render(**kwargs)
+        html = out.render(
+            PAGE_URL=PAGE_URL,
+            REPO_URL=REPO_URL,
+            **kwargs
+        )
         if self.pre:
             html = self.pre(html, **kwargs)
         if parse:
@@ -123,18 +130,37 @@ class Jnj2():
         if self.post:
             html = self.post(html, **kwargs)
 
+        destino = self.destino + destino
+        directorio = dirname(destino)
+
+        html = self.do_relative(directorio, html)
         html = self.do_minimity(html)
         html = self.set_target(html)
 
-        destino = self.destino + destino
-        directorio = os.path.dirname(destino)
-
-        if not os.path.exists(directorio):
-            os.makedirs(directorio)
+        if not exists(directorio):
+            makedirs(directorio)
 
         with open(destino, "wb") as fh:
             fh.write(bytes(html, 'UTF-8'))
         return html
+
+    def do_relative(self, directorio: str, html: str):
+        path = "./" + directorio[len(self.destino):].lstrip("/")
+        soup = bs4.BeautifulSoup(html, 'html.parser')
+        n: bs4.Tag
+        for n in soup.findAll(["a", "img", "script", "link", "iframe", "frame"]):
+            attr = "src"
+            if n.name in ("a", "link"):
+                attr = "href"
+            link = n.attrs.get(attr)
+            if link is None or not link.startswith(PAGE_URL):
+                continue
+            link = "./" + link[len(PAGE_URL):].lstrip("/")
+            link = relpath(link, path)
+            if len(link) == 0:
+                link = "./"
+            n.attrs[attr] = link
+        return str(soup)
 
     def do_minimity(self, html: str):
         if not self.minify:
@@ -182,7 +208,7 @@ class Jnj2():
 
     def create_script(self, destino, replace=False, **kargv):
         destino = self.destino + destino
-        if not replace and os.path.isfile(destino):
+        if not replace and isfile(destino):
             return
         indent = 2
         if self.minify:
@@ -207,4 +233,4 @@ class Jnj2():
 
     def exists(self, destino):
         destino = self.destino + destino
-        return os.path.isfile(destino)
+        return isfile(destino)
