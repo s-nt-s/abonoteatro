@@ -136,13 +136,6 @@ class Evento(NamedTuple):
         return Evento(**obj)
 
     @property
-    def descuento(self):
-        if self.precio in (None, 0):
-            return 0
-        d = (self.precio-Api.PRICE)
-        return round((d/self.precio)*100)
-
-    @property
     def titulo(self):
         tit = clean_txt(self.txt)
         sub = clean_txt(self.subtitulo)
@@ -239,8 +232,6 @@ class Api:
     EVENT = '#modal_event_content > div.container'
     URLDAY = 'https://compras.abonoteatro.com/compra/?eventocurrence='
     DETAIL = 'https://www.abonoteatro.com/catalogo/detalle_evento.php'
-    PRICE = 3.50
-    COMPANION = 3.50 + 5
     CATALOG = (
         "https://compras.abonoteatro.com/teatro/",
         "https://compras.abonoteatro.com/cine-y-eventos/",

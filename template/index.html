@@ -26,10 +26,10 @@
       <option value="otros">Otros ({{categorias['otros']}})</option>
       {% endif %}
     </select>
-    {% for e in eventos %}
+    {% for (img, e) in eventos %}
     <div id="e{{e.id}}" class="evento {{e.categoria | simplify}}">
       <div class="img">
-        <div><img src="{{e.img}}" alt="{{e.titulo}}" /></div>
+        <div><img src="{{img.url}}" alt="{{e.titulo}}" class="{{img.orientation}}"/></div>
         <span class="categoria">{{e.categoria.title()}}</span>
       </div>
       <div class="info">
