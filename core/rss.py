@@ -73,5 +73,5 @@ class EventosRss:
                     {int(round(e.precio))}€ {e.categoria},
                     <a href="{e.lugar.url}">{e.lugar.txt} ({e.lugar.direccion})</a>
                 ''').strip().replace("Nonem², ", "").replace("\n", "<br/>"),
-                #pubDate=datetime(*map(int, p.fecha.split("-")))
+                pubDate=datetime(*map(int, e.publicado.split(" ")[0].split("-")))
             )

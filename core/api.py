@@ -11,8 +11,9 @@ from functools import cached_property
 import base64
 import json
 from urllib.parse import quote
-from .util import clean_js_obj, clean_txt, get_obj, trim, get_text, get_or, clean_html, simplify_html
+from .util import clean_js_obj, clean_txt, get_obj, trim, get_text, clean_html, simplify_html
 from unidecode import unidecode
+import requests
 
 from .filemanager import FM
 
@@ -20,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 re_sp = re.compile(r"\s+")
 MONTHS = ("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "dic")
+NOW = datetime.now().strftime("%Y-%m-%d %H:%S")
 
 
 class TupleCache(Cache):
@@ -121,6 +123,7 @@ class Evento(NamedTuple):
     categoria: str
     lugar: Lugar
     sesiones: Tuple[Sesion] = tuple()
+    publicado: str = None
 
     def merge(self, **kwargs):
         return Evento(**{**self._asdict(), **kwargs})
@@ -271,7 +274,9 @@ class Api:
         for url in Api.CATALOG:
             for e in self.get_events_from(url):
                 if e.id not in evs or e.precio > evs[e.id].precio:
-                    evs[e.id] = e
+                    evs[e.id] = e.merge(
+                        publicado=self.publish.get(e.id, NOW)
+                    )
         return tuple(sorted(evs.values()))
 
     def get_events_from(self, url):
@@ -417,6 +422,36 @@ class Api:
         self.get(url)
         logger.info("GET "+url)
         return self.w.soup
+
+    @cached_property
+    def publish(self):
+        fch: Dict[int, str] = {}
+        for e in self.__get_previous_json():
+            f = e.get('publicado')
+            if isinstance(f, str) and len(f) > 0:
+                fch[e['id']] = f
+        return fch
+
+    def __get_previous_json(self):
+        url = environ.get('PAGE_URL')+'/eventos.json'
+        js = []
+        try:
+            r = requests.get(url)
+            js = r.json()
+        except Exception:
+            logger.critical(url+" no se puede recuperar", exc_info=True)
+            pass
+        if not isinstance(js, list) or len(js) == 0:
+            logger.critical(url+" no es una lista")
+            return []
+        if not isinstance(js[0], dict):
+            logger.critical(url+" no es una lista de diccionarios")
+            return []
+        e = js[0]
+        if "id" not in e or not isinstance(e['id'], int):
+            logger.critical(url+" no es una lista de diccionarios con campo id: int")
+            return []
+        return js
 
     def find_category(self, url: str, js: Dict):
         def _plan_text(s: str):
