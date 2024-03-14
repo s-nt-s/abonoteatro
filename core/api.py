@@ -336,7 +336,8 @@ class Api:
 
     @Cache("rec/detail/{}.html")
     def get_soup_detail(self, id: int):
-        self.get(Api.DETAIL, action='show', content=self.get_base64(id), label_log=id)
+        self.get(Api.DETAIL, action='show',
+                 content=self.get_base64(id), label_log=id)
         return self.w.soup
 
     def get_base64(self, id: int):
@@ -441,16 +442,19 @@ class Api:
             return []
         e = js[0]
         if "id" not in e or not isinstance(e['id'], int):
-            logger.critical(url+" no es una lista de diccionarios con campo id: int")
+            logger.critical(
+                url+" no es una lista de diccionarios con campo id: int")
             return []
         return js
 
     def find_category(self, url: str, js: Dict):
+        _id = js['id']
+
         def _plan_text(s: str):
             if s is None:
                 return None
             faken = "&%%%#%%%#%%#%%%%%%&"
-            s = re.sub(r"[,\.:]", " ", s).lower()
+            s = re.sub(r"[,\.:\(\)\[\]¡!¿\?]", " ", s).lower()
             s = s.replace("ñ", faken)
             s = unidecode(s)
             s = s.replace(faken, "ñ")
@@ -461,88 +465,146 @@ class Api:
 
         def _txt(s: str):
             if s is not None and len(s.strip()) > 0:
+                s = re_sp.sub(" ", s)
                 soup = BeautifulSoup(s, "html.parser")
+                for n in soup.findAll(["p", "br"]):
+                    n.insert_after(" ")
                 return get_text(soup)
 
-        def _find(s: str, *args):
-            if s is None or len(s) == 0:
+        def _or(s: str, *args):
+            if s is None or len(s) == 0 or len(args) == 0:
                 return False
             for r in args:
                 if re.search(r"\b" + r + r"\b", s):
+                    logger.debug(f"{_id} cumple {r}")
                     return True
             return False
+
+        def _and(s: str, *args):
+            if s is None or len(s) == 0 or len(args) == 0:
+                return False
+            for r in args:
+                if not re.search(r"\b" + r + r"\b", s):
+                    return False
+            logger.debug(f"{_id} cumple AND{args}")
+            return True
 
         path = url.rstrip("/").split("/")[-1]
         if path == "cine_peliculas.php":
             return "cine"
 
-        monimpro = "monologo / impro"
+        humor = "humor / impro"
         musica = "musical / concierto"
         expomus = "exposición / museo"
         name = _plan_text(js['name'] + " "+(js['sub'] or ""))
         info = _plan_text(_txt((js['info'] or "")+" "+(js['condicion'] or "")))
         name_info = (name+" "+(info or "")).strip()
         recinto = _plan_text(js['recinto']) or ""
-
         if recinto == "wizink center baloncesto":
             return "otros"
-        if _find(name+" "+recinto, "autocine", "cinesa", "cinesur", "yelmo", "mk2"):
+        if _or(name+" "+recinto, "autocine", "cinesa", "cinesur", "yelmo", "mk2"):
             return "cine"
-        if path == "cine-y-eventos" and _find(name, "cines", ):
+        if _or(name, "cines"):
             return "cine"
-        if _find(info, "jardin botanico"):
+        if _or(info, "jardin botanico"):
             return "otros"
-        if _find(name, "exposicion", "exposiciones", "museum", "museo"):
+        if _or(name, "exposicion", "exposiciones", "museum", "museo"):
             return expomus
-        if _find(name, "magic", "magia", "magos?", "mentalistas?", "hipnosis"):
-            return "magia"
-        if _find(name, "flamenco"):
-            return "flamenco"
-        if _find(name, "bingo", "drag", "karaoke"):
+        if path == "cine-y-eventos":
             return "otros"
-        if path == "teatro":
-            if _find(info, "monologo narrativo"):
-                return "teatro"
-            if _find(name, "impro", "el humor de"):
-                return monimpro
-            if _find(name, "musical", "concierto", r"boleros?", "orquesta"):
-                return musica
-        if _find(recinto, "houdini") and _find(info, "magia", "mago", "mentalista"):
+        if _or(name, "magic", "magia", "magos?", "mentalistas?", "hipnosis"):
             return "magia"
-        if path == "teatro":
-            if _find(info, "mentalismo"):
-                return "magia"
-            if _find(name_info, "tributo") and _find(name_info, "temas", "grandes exitos", "cantantes", "pop", "bailaras", "cantaras"):
-                return musica
-            if _find(recinto, "humor") and _find(info, "humor"):
-                return monimpro
-        if _find(name_info, "stand ?up", "stand-up", "open-mic", "open ?mic", r"monologos?", "monologuistas", r"impromonologos?", "comedia pura"):
-            return monimpro
-        if _find(name_info, "clown") and _find(name_info, "humor"):
-            return monimpro
-        if path == "teatro":
-            if _find(info, "show de comedia", "humor blanco", "comedia totalmente improvisada", "comico ocasional", "improvisacion teatral", "comedy club", "mas divertida de tu vida", "show improvisado"):
-                return monimpro
-            if _find(info, "comedias musicales", "comedia musical", "musical", "concierto", "percusion", "grandes musicales"):
-                return musica
-            if _find(info, "magia", "mago", "mentalista"):
-                return "magia"
-            if _find(info, "chic comedy", "humor inteligente"):
-                return monimpro
-            if recinto == "sala de humor fuencarral":
-                return monimpro
-            if _find(info, "humor", "humores") and _find(info, "improvisar", "improvisacion", "comicos"):
-                return monimpro
-            if _find(info, "exposicion") and _find(info, "expondran") and _find(info, "obras"):
-                return expomus
-            if _find(info, "show") and _find(info, "comicos?"):
-                return monimpro
-            if _find(name, "el show de"):
-                return monimpro
-            if _find(name, "microteatros"):
-                return "otros"
-            if _find(info, "podcast"):
-                return "otros"
-        if path == "teatro":
+        if _or(name, "impro", "el humor de", "clown"):
+            return humor
+        if _or(name, "flamenco"):
+            return "flamenco"
+        if _or(name, "cabaret"):
+            return "cabaret"
+        if _or(name, "bingo", "drag", "karaoke", "circo", "microteatros"):
+            return "otros"
+        if _or(name, "b vocal", "jazz", "tributo", "sinfonico", "musical", "concierto", r"boleros?", "orquesta", "pianista"):
+            return musica
+
+        if _or(name, "diego arjona", "carlos puggi"):
+            return humor
+        if _or(name, "hector Urien"):
             return "teatro"
-        return "otros"
+
+        if _or(info, "monologo narrativo"):
+            return "teatro"
+        if _or(info, "mentalismo", "espectaculo de magia", "espiritismo"):
+            return "magia"
+        if _and(info, r"exposicion|expondran?", "obras"):
+            return expomus
+        if _or(
+            name_info,
+            "stand ?up",
+            "stand-up",
+            "open-mic",
+            "open ?mic",
+            "monologos",
+            "monologuistas",
+            r"impromonologos?",
+            "comedia pura",
+            "show de comedia",
+            "humor blanco",
+            "comedia totalmente improvisada",
+            "improvisacion teatral",
+            "comedy club",
+            "show improvisado",
+            "chic comedy",
+            "humor inteligente",
+            "comico ocasional",
+            "humorista",
+            "presenta su monologo",
+            "un monologo para",
+            "con un monologo que te"
+        ):
+            # imporate que 'monologos' sea en plural para no confundir con cosas que no son humor
+            return humor
+
+        if _or(
+            info,
+            r"comedias? musical(es)?",
+            r"gran(des)? musical(es)?",
+            "espectaculo musical",
+            "musical integramente cantado",
+            "viaje musical",
+            "concierto",
+            "percusion",
+            "banda sonora"
+        ):
+            return musica
+        if _and(name_info, "clown", "humor"):
+            return humor
+        if _or(info, "mentalista", "prestidigitador", "mentalismo"):
+            return "magia"
+        if _or(info, "humor", "humores", "risas") and _or(info, "improvisar", "improvisacion", "comicos"):
+            return humor
+        if _and(info, "show", "comicos?"):
+            return humor
+        if _or(name, "el show de"):
+            return humor
+        if recinto == "sala de humor fuencarral":
+            # importante que vaya al final
+            # porque a veces hace magia u otras cosas
+            return humor
+            # importante que vaya al final
+            # porque a veces hace monologos u otras cosas
+        if recinto == "sala houdini":
+            return "magia"
+        if _or(
+            info,
+            "podcast",
+            "globoflexia",
+            "espectaculo para niños",
+            "lanzamiento de su nuevo libro"
+        ):
+            return "otros"
+        if _or(
+            info,
+            "cabaret"
+        ):
+            return "cabaret"
+        logger.debug(f"{_id} no cumple ninguna condición")
+        return "teatro"

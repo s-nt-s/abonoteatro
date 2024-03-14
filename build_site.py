@@ -8,6 +8,7 @@ from core.rss import EventosRss
 from core.img import MyImage
 import logging
 from os import environ
+from os.path import isfile
 
 import argparse
 
@@ -38,23 +39,27 @@ precio = dict(
 
 
 def add_image(e: Evento):
-    im = MyImage(e.img)
-    if im.isKO:
-        return (im, e)
-    width = 500
-    height = im.height
-    if im.isPortrait:
-        height = width*(9/16)
-    tb = im.thumbnail(width=width, height=height)
-    if tb is None or tb.isKO:
-        return (im, e)
-    tr = tb.trim()
-    if tr is not None and tr.isOK and im.isLandscape and tr.isPortrait:
-        tb = tr
     local = f"img/{e.id}.jpg"
-    lc = tb.save(OUT+local, quality=90)
-    if lc is None or lc.isKO:
-        return (im, e)
+    file = OUT+local
+    im = MyImage(e.img)
+    if isfile(file):
+        lc = MyImage(file, parent=im)
+    else:
+        if im.isKO:
+            return (im, e)
+        width = 500
+        height = im.height
+        if im.isPortrait:
+            height = width*(9/16)
+        tb = im.thumbnail(width=width, height=height)
+        if tb is None or tb.isKO:
+            return (im, e)
+        tr = tb.trim()
+        if tr is not None and tr.isOK and im.isLandscape and tr.isPortrait:
+            tb = tr
+        lc = tb.save(file, quality=90)
+        if lc is None or lc.isKO:
+            return (im, e)
     lc.url = PAGE_URL+'/'+local
     return (lc, e)
 
