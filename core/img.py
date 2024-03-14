@@ -131,10 +131,14 @@ class DwnImage:
 
 
 class MyImage:
-    def __init__(self, image: Union[str, Image.Image], origin: Image.Image = None):
+    def __init__(self, image: Union[str, Image.Image], parent: Image.Image = None):
         self.__path_or_image = image
         self.__url = None
-        self.origin = None
+        self.__parent = parent
+
+    @property
+    def parent(self):
+        return self.__parent
 
     @property
     def url(self):
@@ -201,13 +205,13 @@ class MyImage:
         diff = ImageChops.add(diff, diff, 2, -100)
         bbox = diff.getbbox()
         if not bbox:
-            #logger.warning("diff.getbbox() is None")
+            logger.warning(f"trim: diff.getbbox() is None en {self.origin.name}")
             return None
         if bbox == self.im.getbbox():
-            #logger.warning("no se ha detectado ningún marco")
+            logger.warning(f"trim: bbox == self.im.getbbox() en {self.origin.name}")
             return None
         im = self.im.crop(bbox)
-        return MyImage(im)
+        return MyImage(im, parent=self)
 
     def get_corner_colors(self) -> CornerColor:
         top_left_color = self.im.getpixel((0, 0))
@@ -256,13 +260,13 @@ class MyImage:
     def thumbnail(self, width: int, height: int):
         im = self.im.copy()
         im.thumbnail((round(width), round(height)))
-        return MyImage(im)
+        return MyImage(im, parent=self)
 
     @property
-    def __name(self):
+    def name(self):
         if isinstance(self.__path_or_image, str):
             return self.__path_or_image
-        return str(type(self.im))
+        return str(self.im)
 
     def save(self, filename: str, quality: float = None):
         dr = dirname(filename)
@@ -271,10 +275,16 @@ class MyImage:
         try:
             self.im.save(filename, quality=quality)
         except IOError:
-            logger.critical(f"No se pudo copiar {self.__name} a {filename}", exc_info=True)
+            logger.critical(f"No se pudo copiar {self.name} a {filename}", exc_info=True)
             return None
-        return MyImage(filename)
+        return MyImage(filename, parent=self)
 
+    @property
+    def origin(self):
+        p = self
+        while p.parent is not None:
+            p = p.parent
+        return p
 
 if __name__ == "__main__":
     import sys

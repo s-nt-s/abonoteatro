@@ -119,7 +119,7 @@ div.img {
   position: relative;
 }
 
-span.categoria {
+span.categoria, a.zoom{
   position: absolute;
   bottom: 0px;
   margin: 0;
@@ -127,6 +127,11 @@ span.categoria {
   background-color: rgba(0, 0, 0, 0.5);
   color: white;
   padding: 5px;
+}
+a.zoom {
+  text-decoration: none;
+  right: 0 !important;
+  left: unset;
 }
 div.img > div {
   text-align: center;

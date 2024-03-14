@@ -247,7 +247,11 @@ class Api:
             return
         self.w.get(url, *args, **kwargs)
         if kwargs:
-            logger.info("POST "+url)
+            id = kwargs.get('id')
+            if id is not None:
+                logger.info(f"POST {url} id={id}")
+            else:
+                logger.info(f"POST {url}")
         else:
             logger.info("GET "+url)
 
