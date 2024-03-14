@@ -2,6 +2,17 @@ import logging
 from os import makedirs, environ
 from os.path import dirname
 
+CRITICAL = (
+    'charset_normalizer',
+    'seleniumwire.proxy.handler',
+    'seleniumwire.proxy.client',
+    'urllib3.connectionpool',
+    'seleniumwire.proxy.storage',
+    'selenium.webdriver.remote.remote_connection',
+    'asyncio',
+    'PIL.PngImagePlugin',
+    'PIL.TiffImagePlugin'
+)
 
 def config_log(file: str):
     d = dirname(file)
@@ -22,7 +33,7 @@ def config_log(file: str):
             file_handler
         ]
     )
-    for name in ('charset_normalizer', 'seleniumwire.proxy.handler', 'seleniumwire.proxy.client', 'urllib3.connectionpool', 'seleniumwire.proxy.storage', 'selenium.webdriver.remote.remote_connection', 'asyncio'):
+    for name in CRITICAL:
         logging.getLogger(name).setLevel(logging.CRITICAL)
 
     if log_level != logging.DEBUG:

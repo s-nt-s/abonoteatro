@@ -242,18 +242,15 @@ class Api:
         self.__w = None
         self.__base64: Dict[str, str] = {}
 
-    def get(self, url, *args, **kwargs):
+    def get(self, url, *args, label_log=None, **kwargs):
         if self.w.url == url and len(args) == 0 and len(kwargs) == 0:
             return
         self.w.get(url, *args, **kwargs)
+        log = (str(label_log)+":" if label_log is not None else "")
         if kwargs:
-            id = kwargs.get('id')
-            if id is not None:
-                logger.info(f"POST {url} id={id}")
-            else:
-                logger.info(f"POST {url}")
+            logger.info(f"{log} POST {url}".strip())
         else:
-            logger.info("GET "+url)
+            logger.info(f"{log} GET {url}".strip())
 
     @property
     def w(self):
@@ -339,7 +336,7 @@ class Api:
 
     @Cache("rec/detail/{}.html")
     def get_soup_detail(self, id: int):
-        self.get(Api.DETAIL, action='show', content=self.get_base64(id))
+        self.get(Api.DETAIL, action='show', content=self.get_base64(id), label_log=id)
         return self.w.soup
 
     def get_base64(self, id: int):

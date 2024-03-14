@@ -208,7 +208,7 @@ class MyImage:
             logger.warning(f"trim: diff.getbbox() is None en {self.origin.name}")
             return None
         if bbox == self.im.getbbox():
-            logger.warning(f"trim: bbox == self.im.getbbox() en {self.origin.name}")
+            logger.debug(f"trim: no tiene marco {self.origin.name}")
             return None
         im = self.im.crop(bbox)
         return MyImage(im, parent=self)
@@ -285,6 +285,7 @@ class MyImage:
         while p.parent is not None:
             p = p.parent
         return p
+
 
 if __name__ == "__main__":
     import sys
