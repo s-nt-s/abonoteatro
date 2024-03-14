@@ -14,6 +14,7 @@ from urllib.parse import quote
 from .util import clean_js_obj, clean_txt, get_obj, trim, get_text, clean_html, simplify_html
 from unidecode import unidecode
 import requests
+from .wpjson import WP
 
 from .filemanager import FM
 
@@ -123,6 +124,7 @@ class Evento(NamedTuple):
     categoria: str
     lugar: Lugar
     sesiones: Tuple[Sesion] = tuple()
+    creado: str = None
     publicado: str = None
 
     def merge(self, **kwargs):
@@ -260,6 +262,11 @@ class Api:
                 self.__w = w.to_web()
         return self.__w
 
+    @cached_property
+    def wp(self):
+        w = WP(self.w.s, "https://compras.abonoteatro.com")
+        return w
+
     @TupleCache("rec/eventos.json", builder=Evento.build)
     def get_events(self):
         evs: Dict[int, Evento] = {}
@@ -267,9 +274,19 @@ class Api:
             for e in self.get_events_from(url):
                 if e.id not in evs or e.precio > evs[e.id].precio:
                     evs[e.id] = e.merge(
-                        publicado=self.publish.get(e.id, NOW)
+                        publicado=self.publish.get(e.id, NOW),
+                        creado=self.media_date.get(e.img)
                     )
         return tuple(sorted(evs.values()))
+
+    @cached_property
+    def media_date(self):
+        data = {}
+        for m in self.wp.media:
+            f = m['modified'].replace("T", " ")[:16]
+            u = m['source_url']
+            data[u] = f
+        return data
 
     def get_events_from(self, url):
         evs: Set[Evento] = set()
