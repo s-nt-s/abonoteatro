@@ -4,6 +4,7 @@ from datetime import date, datetime
 from urllib.parse import quote_plus
 from minify_html import minify
 from unidecode import unidecode
+from _collections_abc import dict_items
 from os.path import relpath, dirname, exists, isfile
 from os import environ, makedirs
 
@@ -14,6 +15,36 @@ re_br = re.compile(r"<br/>(\s*</)")
 re_sp = re.compile(r"\s+")
 PAGE_URL = environ['PAGE_URL']
 REPO_URL = environ['REPO_URL']
+
+
+class CustomEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, (datetime, date)):
+            return o.__str__()
+        if isinstance(o, dict_items):
+            return ["<<Map>>", list(o), "<</END>>"]
+        if isinstance(o, dict):
+            return ["<<Map>>", list(o.items()), "<</END>>"]
+        return super().default(o)
+
+    def __parse(self, o):
+        if isinstance(o, dict):
+            return ["<<Map>>", list(
+                    map(lambda kv: (
+                        kv[0], self.__parse(kv[1])), o.items())
+                    ), "<</END>>"]
+        if isinstance(o, set):
+            o = list(map(self.__parse, o))
+            if len(o) > 0 and len(set(map(lambda x: type(x), o))) == 1:
+                if isinstance(o[0], (str, int, float)):
+                    o = sorted(o)
+            return ["<<Set>>", o, "<</END>>"]
+        if isinstance(o, (list, tuple)):
+            return list(map(self.__parse, o))
+        return o
+
+    def encode(self, o):
+        return super().encode(self.__parse(o))
 
 
 def simplify(s: str):
@@ -219,16 +250,18 @@ class Jnj2():
                 if i > 0:
                     f.write("\n")
                 f.write("const "+k+" = ")
-                if not isinstance(v, str):
-                    json.dump(
-                        v,
-                        f,
-                        indent=indent,
-                        separators=separators,
-                        default=myconverter
-                    )
-                else:
-                    f.write(v)
+                if isinstance(v, str):
+                    f.write(v+";")
+                    continue
+                js = json.dumps(
+                    v,
+                    indent=indent,
+                    separators=separators,
+                    cls=CustomEncoder
+                )
+                js = re.sub(r'\[\s*"<<(Map|Set)>>"\s*,\s*', r'new \1(', js)
+                js = re.sub(r'\s*,\s*"<</END>>"\s*\]', ')', js)
+                f.write(js)
                 f.write(";")
 
     def exists(self, destino):

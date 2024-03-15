@@ -7,6 +7,9 @@ body {
 body:not(.js) .needjs {
   display: none;
 }
+.hide {
+  display: none;
+}
 header, footer {
   padding: 1em;
   clear: both;

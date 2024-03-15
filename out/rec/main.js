@@ -106,13 +106,14 @@ class FormQuery {
     if (form.fin) qr.push(form.fin);
     let query = qr.length ? "?" + qr.join("&") : "";
     const title = document.querySelector("title");
-    const txt = ((id) => {
-      if (getVal(id) == null) return null;
-      return document
-        .getElementById(id)
-        .selectedOptions[0].textContent.trim()
-        .replace(/\s*\(\d+\)\s*$/, "");
-    })("categoria");
+    const select = document.getElementById("categoria");
+    Array.from(select.options).forEach(o=>{
+      const txt = (o.getAttribute("data-txt")??"Todos");
+      const cat = o.value??"";
+      if (cat.length==0) o.innerHTML = txt + " ("+ document.querySelectorAll("div.evento:not(.hide)").length+")"
+      else o.innerHTML = txt + " ("+ document.querySelectorAll("div.evento."+cat+":not(.hide)").length+")"
+    })
+    const txt = select.selectedOptions[0].getAttribute("data-txt")??"".trim();
     if (txt == null || txt.length == 0) title.textContent = window.__title__;
     else title.textContent = window.__title__ + ": " + txt;
     if (document.location.search == query) return;
@@ -158,43 +159,34 @@ class FormQuery {
 
 function getOkSession(d) {
   if (d.ini == null && d.fin == null) return null;
-  const ids = new Set(SIN_SESIONES);
-  Object.entries(SESIONES).forEach(([k, v]) => {
+  let ids = new Set(SIN_SESIONES);
+  SESIONES.forEach((v, k) => {
     if (d.ini != null && d.ini > k) return;
     if (d.fin != null && d.fin < k) return;
-    v.forEach((i) => ids.add(i));
+    ids = ids.union(v);
   });
   return ids;
 }
 
 function filtrar() {
-  let ko;
   const form = FormQuery.form();
-  const categ = form.categoria ?? "";
+  const categ = form.categoria;
   const okSession = getOkSession(form);
-  ko = [];
   document.querySelectorAll("div.evento").forEach((e) => {
+    e.style.display = "";
     if (okSession == null) {
-      e.style.display = "";
+      e.classList.remove("hide");
       return;
     }
     const id = Number(e.id.substring(1));
-    if (okSession.has(id)) {
-      e.style.display = "";
-      return;
-    }
-    ko.push(id);
-    e.style.display = "none";
+    if (okSession.has(id)) return;
+    e.classList.add("hide")
   });
-  if (ko.length) console.log("Descartados por fecha: " + ko.join(" "));
-  ko = [];
-  if (categ.length > 0)
-    document.querySelectorAll("div.evento:not(." + categ + ")").forEach((e) => {
-      const id = Number(e.id.substring(1));
-      ko.push(id);
-      e.style.display = "none";
-    });
-  if (ko.length) console.log("Descartados por categoria: " + ko.join(" "));
+  if (categ == null) FormQuery.CSS.innerHTML = "";
+  else {
+    const style = FormQuery.CATEGORIES.filter(c=>c!=categ).map(c=>"div.evento."+c).join(", ");
+    FormQuery.CSS.innerHTML = style +" {display:none}";
+  }
   FormQuery.form_to_query();
   return;
 }
@@ -210,8 +202,13 @@ function fixDates() {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+  FormQuery.CSS = document.getElementById("jscss");
   FormQuery.MIN_DATE = getAtt("ini", "min");
   FormQuery.MAX_DATE = getAtt("ini", "max");
+  FormQuery.CATEGORIES = Array.from(document.getElementById("categoria").options).flatMap(o=>{
+    const v = o.value.trim();
+    return (v.length==0)?[]:v;
+  })
   window.__title__ = document.querySelector("title").textContent.trim();
   FormQuery.query_to_form();
   document.getElementById("ini").addEventListener("change", fixDates);

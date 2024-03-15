@@ -81,9 +81,9 @@ img_eventos = tuple(map(add_image, eventos))
 j = Jnj2("template/", OUT)
 j.create_script(
     "rec/info.js",
-    EVENTOS=tuple(sorted(set((e.id for e in eventos)))),
-    SESIONES=dict_tuple(sesiones),
-    SIN_SESIONES=tuple(sorted(sin_sesiones)),
+    EVENTOS=set((e.id for e in eventos)),
+    SESIONES=sesiones,
+    SIN_SESIONES=sin_sesiones,
     replace=True,
 )
 j.save(

@@ -1,12 +1,19 @@
 const INPUT_DATE_SUPPORT=(() => {
-    const div = document.createElement("div");
-    div.innerHTML='<input type="date" value="2024-01-01"/>'
-    const i = div.querySelector("input");
-    if (i.tagName!="INPUT" || i.getAttribute("type")!="date") return false;
+    const i = document.createElement("input");
+    i.setAttribute("type", "date");
+    i.setAttribute("value", "2023-01-01");
+    if (i.type !== "date") return false;
     if (i.valueAsDate == null) return false;
     if (!(i.valueAsDate instanceof Date) || isNaN(i.valueAsDate)) return false;
     return true;
 })();
+if (!Set.prototype.union) {
+    Set.prototype.union = function(setB) {
+        const unionSet = new Set(this);
+        setB.forEach(elem=>unionSet.add(elem));
+        return unionSet;
+    };
+}
 
 document.addEventListener("DOMContentLoaded", function () {
     document.body.classList.add("js");
