@@ -1,5 +1,5 @@
 import re
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Set, Tuple
 from bs4 import Tag, BeautifulSoup
 from minify_html import minify
 import unicodedata
@@ -196,3 +196,16 @@ def get_or(obj: Dict, *args):
         if v is not None:
             return v
     raise KeyError(", ".join(map(str, args)))
+
+
+def dict_add(obj: Dict[str, Set], a: str, b: Union[str, int, List[str], Set[str], Tuple[str]]):
+    if a not in obj:
+        obj[a] = set()
+    if isinstance(b, (str, int)):
+        obj[a].add(b)
+    else:
+        obj[a] = obj[a].union(b)
+
+
+def dict_tuple(obj: Dict[str, Union[Set, List, Tuple]]):
+    return {k: tuple(sorted(set(v))) for k, v in obj.items()}

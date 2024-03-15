@@ -6,9 +6,11 @@ from datetime import datetime
 from core.log import config_log
 from core.rss import EventosRss
 from core.img import MyImage
+from core.util import dict_add, dict_tuple
 import logging
 from os import environ
 from os.path import isfile
+from typing import  Dict, Set
 
 import argparse
 
@@ -22,20 +24,6 @@ OUT = "out/"
 config_log("log/build_site.log")
 logger = logging.getLogger(__name__)
 now = datetime.now()
-
-eventos = sorted(
-    Api().get_events(),
-    key=lambda e: (e.publicado, e.precio, len(e.sesiones), e.txt, e.id),
-    reverse=True
-)
-categorias = {}
-for e in eventos:
-    categorias[e.categoria] = categorias.get(e.categoria, 0) + 1
-
-precio = dict(
-    abonado=3.50,
-    compa=3.50 + 5
-)
 
 
 def add_image(e: Evento):
@@ -64,16 +52,51 @@ def add_image(e: Evento):
     return (lc, e)
 
 
+eventos = sorted(
+    Api().get_events(),
+    key=lambda e: (e.publicado, e.precio, len(e.sesiones), e.txt, e.id),
+    reverse=True
+)
+categorias = {}
+sesiones: Dict[str, Set[int]] = {}
+sin_sesiones: Set[int] = set()
+
+for e in eventos:
+    categorias[e.categoria] = categorias.get(e.categoria, 0) + 1
+    if len(e.fechas) == 0:
+        sin_sesiones.add(e.id)
+        continue
+    for f in e.fechas:
+        f = f.split()[0]
+        dict_add(sesiones, f, e.id)
+
+precio = dict(
+    abonado=3.50,
+    compa=3.50 + 5
+)
+
+
 img_eventos = tuple(map(add_image, eventos))
 
 j = Jnj2("template/", OUT)
+j.create_script(
+    "rec/info.js",
+    EVENTOS=tuple(sorted(set((e.id for e in eventos)))),
+    SESIONES=dict_tuple(sesiones),
+    SIN_SESIONES=tuple(sorted(sin_sesiones)),
+    replace=True,
+)
 j.save(
     "index.html",
     eventos=img_eventos,
     precio=precio,
     now=now,
     categorias=categorias,
-    count=len(eventos)
+    count=len(eventos),
+    fecha=dict(
+        ini=min(sesiones.keys()),
+        fin=max(sesiones.keys())
+    )
 )
 
 for img, e in img_eventos:

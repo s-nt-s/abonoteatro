@@ -1,6 +1,7 @@
 /rec/
 out/*
 !out/rec/
+out/rec/info.js
 myenv
 
 # Byte-compiled / optimized / DLL files

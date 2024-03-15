@@ -4,6 +4,9 @@ body {
   margin: 0;
   --max-width: 500px;
 }
+body:not(.js) .needjs {
+  display: none;
+}
 header, footer {
   padding: 1em;
   clear: both;
@@ -96,7 +99,6 @@ nav ul li code {
 }
 #categoria {
   width: 100%;
-  margin-bottom: 16px;
 }
 ol.sesiones {
   padding-right: 0px;
@@ -145,4 +147,31 @@ body.js div.evento img:not(.loaded) {
 }
 div.evento img.portrait {
   max-height:calc(min(var(--max-width), 100vw) * 9 / 16);
+}
+
+
+p.fechas {
+  display: flex;
+  align-items: center;
+}
+
+p input:first-of-type {
+  order: 1;
+  margin-right: auto;
+}
+
+p input:last-of-type {
+  order: 3;
+  margin-left: auto;
+}
+
+p.fechas::after {
+  content: "";
+  flex-grow: 1;
+  border-bottom: 1px solid black;
+  margin: 0 10px;
+  order: 2;
+}
+body.noinputdate p.fechas {
+  display: none;
 }

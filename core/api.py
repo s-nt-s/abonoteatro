@@ -180,6 +180,14 @@ class Evento(NamedTuple):
             dias[dia].append(e)
         return dias.items()
 
+    @property
+    def fechas(self):
+        fechas: Set[str] = set()
+        for e in self.sesiones:
+            if e.fecha is not None:
+                fechas.add(e.fecha)
+        return tuple(sorted(fechas))
+
     @staticmethod
     def create(js: Dict, detail: Tag, categoria: str, sesiones: Tuple[Sesion]):
         precio = max(0, (js.get('precio') or 0), (js.get('pvp') or 0))
@@ -379,6 +387,8 @@ class Api:
         ses: Set[Sesion] = set()
         for did, a in arr:
             ses.add(self.__get_day(did, a))
+        if len(ses) == 0:
+            logger.warning(f"{id} no se han encontrado sesiones")
         return tuple(sorted(ses, key=lambda s: (s.fecha, s.id)))
 
     def __get_day(self, id: int, a: Tag):
@@ -537,14 +547,14 @@ class Api:
             return "flamenco"
         if _or(name, "cabaret"):
             return "cabaret"
-        if _or(name, "bingo", "drag", "karaoke", "circo", "microteatros"):
+        if _or(name, "bingo", "drag", "karaoke", "circo", "parque de atracciones"):
             return "otros"
-        if _or(name, "b vocal", "jazz", "tributo", "sinfonico", "musical", "concierto", r"boleros?", "orquesta", "pianista"):
+        if _or(name, "b vocal", "opera", "musica en vivo", "jazz", "tributo", "sinfonico", "musical", "concierto", r"boleros?", "orquesta", "pianista"):
             return musica
 
         if _or(name, "diego arjona", "carlos puggi"):
             return humor
-        if _or(name, "hector Urien"):
+        if _or(name, "hector Urien", "microteatros"):
             return "teatro"
 
         if _or(info, "monologo narrativo"):

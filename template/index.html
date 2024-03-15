@@ -7,6 +7,7 @@
   <title>Abono Teatro</title>
   <meta name="Last-Modified" content="{{now.strftime('%Y-%m-%d %H:%M:%S')}}" />
   <link href="{{PAGE_URL}}/rec/main.css" rel="stylesheet"/>
+  <script src="{{PAGE_URL}}/rec/info.js" type="text/javascript"></script>
   <script src="{{PAGE_URL}}/rec/img.js" type="text/javascript"></script>
   <script src="{{PAGE_URL}}/rec/dev.js" type="text/javascript"></script>
   <script src="{{PAGE_URL}}/rec/main.js" type="text/javascript"></script>
@@ -15,6 +16,11 @@
 <body>
   {% with root="." %} {% include "header.html" %} {% endwith %}
   <main>
+    <p class="fechas needjs">
+    <input type="date" id="ini" value="{{fecha.ini}}" min="{{fecha.ini}}" max="{{fecha.fin}}" title="Fecha de inicio"> 
+    <input type="date" id="fin" value="{{fecha.fin}}" min="{{fecha.ini}}" max="{{fecha.fin}}" title="Fecha de fin">
+    </p>
+    <p class="categoria needjs">
     <select id="categoria">
       <option value="">Todos</option>
       {% for c, num in categorias.items()|sort %}
@@ -26,6 +32,7 @@
       <option value="otros">Otros ({{categorias['otros']}})</option>
       {% endif %}
     </select>
+  </p>
     {% for (img, e) in eventos %}
     <div id="e{{e.id}}" class="evento {{e.categoria | simplify}}">
       <div class="img">
