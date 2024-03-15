@@ -6,11 +6,13 @@ from datetime import datetime
 from core.log import config_log
 from core.rss import EventosRss
 from core.img import MyImage
-from core.util import dict_add, dict_tuple
+from core.util import dict_add
 import logging
 from os import environ
 from os.path import isfile
-from typing import  Dict, Set
+from typing import Dict, Set
+from statistics import multimode
+
 
 import argparse
 
@@ -52,17 +54,19 @@ def add_image(e: Evento):
     return (lc, e)
 
 
-eventos = sorted(
-    Api().get_events(),
-    key=lambda e: (e.publicado, e.precio, len(e.sesiones), e.txt, e.id),
-    reverse=True
-)
+logger.info("Recuperar eventos")
+eventos = list(Api().get_events())
+logger.info(f"{len(eventos)} recuperados")
 categorias = {}
 sesiones: Dict[str, Set[int]] = {}
 sin_sesiones: Set[int] = set()
+cine_precio = []
 
 for e in eventos:
     categorias[e.categoria] = categorias.get(e.categoria, 0) + 1
+    if e.categoria == "cine":
+        if e.precio > 0:
+            cine_precio.append(e.precio)
     if len(e.fechas) == 0:
         sin_sesiones.add(e.id)
         continue
@@ -70,13 +74,28 @@ for e in eventos:
         f = f.split()[0]
         dict_add(sesiones, f, e.id)
 
+if len(cine_precio) > 0:
+    p = min(multimode(cine_precio))
+    for i, e in enumerate(eventos):
+        if e.categoria == "cine" and e.precio == 0:
+            logger.info(f"{e.id} ({e.categoria}) precio 0 -> {p}")
+            eventos[i] = e.merge(precio=p)
+
+
 precio = dict(
     abonado=3.50,
     compa=3.50 + 5
 )
 
+eventos = sorted(
+    eventos,
+    key=lambda e: (e.publicado, e.precio, len(e.sesiones), e.txt, e.id),
+    reverse=True
+)
 
+logger.info("Añadiendo imágenes")
 img_eventos = tuple(map(add_image, eventos))
+logger.info("Creando web")
 
 j = Jnj2("template/", OUT)
 j.create_script(
@@ -110,8 +129,11 @@ for img, e in img_eventos:
         count=len(eventos)
     )
 
+logger.info(f"Creando rss")
 EventosRss(
     destino=OUT,
     root=PAGE_URL,
     eventos=eventos
 ).save("abonoteatro.rss")
+
+logger.info("Fin")
