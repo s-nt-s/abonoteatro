@@ -476,6 +476,7 @@ class Api:
 
     def find_category(self, url: str, js: Dict):
         _id = js['id']
+        cat = js['id_categoria']
 
         def _plan_text(s: str):
             if s is None:
@@ -552,11 +553,6 @@ class Api:
         if _or(name, "b vocal", "opera", "musica en vivo", "jazz", "tributo", "sinfonico", "musical", "concierto", r"boleros?", "orquesta", "pianista"):
             return musica
 
-        if _or(name, "diego arjona", "carlos puggi"):
-            return humor
-        if _or(name, "hector Urien", "microteatros"):
-            return "teatro"
-
         if _or(info, "monologo narrativo"):
             return "teatro"
         if _or(info, "mentalismo", "espectaculo de magia", "espiritismo"):
@@ -620,6 +616,8 @@ class Api:
             # porque a veces hace monologos u otras cosas
         if recinto == "sala houdini":
             return "magia"
+        if _or(info, "esta obra puede herir la sensibilidad del espectador"):
+            return "teatro"
         if _or(
             info,
             "podcast",
@@ -633,5 +631,20 @@ class Api:
             "cabaret"
         ):
             return "cabaret"
+        categoria = {
+            11: "teatro",
+            15: "magia",
+            17: "otros",
+            19: musica,
+            20: "otros",
+            21: "cine",
+            22: musica,
+            23: humor,
+            24: expomus,
+            25: "otros"
+        }.get(cat)
+        if categoria is not None:
+            logger.debug(f"{_id} categoria={cat} -> "+categoria)
+            return categoria
         logger.debug(f"{_id} no cumple ninguna condición")
         return "teatro"
