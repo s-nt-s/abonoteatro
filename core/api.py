@@ -152,16 +152,21 @@ class Evento(NamedTuple):
             return BeautifulSoup(clean_html(str(soup)), "html.parser")
 
     @property
-    def condiciones(self):
+    def fichahtml(self):
         n = self.html.select_one("#informacioneventolargo")
         if n is None:
             return None
         for d in n.findAll("div"):
             if get_text(d) == "Ver menos":
                 d.extract()
+        for e in n.select(":scope > *"):
+            txt = (get_text(e) or "")
+            word = re.sub(r"\s+:", ":", txt).upper().split(":")[0].strip()
+            if word in ("SINOPSIS", "SINOSPSIS"):
+                break
+            n.append(e)
         n = BeautifulSoup(simplify_html(str(n)), "html.parser")
         n.attrs.clear()
-        n.attrs["class"] = "condiciones"
         return str(n)
 
     @property

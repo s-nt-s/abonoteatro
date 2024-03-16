@@ -53,7 +53,7 @@
         {% endfor %}
       </ol>
       {% endif %}
-      {% if e.condiciones %} {{e.condiciones | safe}} {% endif %}
+      {% if e.fichahtml %} {{e.fichahtml | safe}} {% endif %}
     </div>
   </main>
   {% with root=".." %} {% include "footer.html" %} {% endwith %}
