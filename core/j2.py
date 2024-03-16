@@ -261,6 +261,9 @@ class Jnj2():
                 )
                 js = re.sub(r'\[\s*"<<(Map|Set)>>"\s*,\s*', r'new \1(', js)
                 js = re.sub(r'\s*,\s*"<</END>>"\s*\]', ')', js)
+                if not self.minify:
+                    js = re.sub(r'\s*\[[^\[\]]+\]\s*',
+                                lambda x: re_sp.sub(" ", x.group()).strip(), js)
                 f.write(js)
                 f.write(";")
 
