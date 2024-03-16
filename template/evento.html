@@ -23,6 +23,10 @@
       </ul>
     </nav>
   </header>
+  {% set compa = precio.compa %}
+  {% if (compa >= e.precio) and (e.precio>0) %}
+  {% set compa = precio.compa-1 %}
+  {% endif %}
   <main>
     <div id="e{{e.id}}" class="evento">
       <div class="img">
@@ -35,7 +39,7 @@
           {% else %}<span title="¿?€ -> {{precio.abonado|twoDec}}€" class="descuento">¿?€</span>
           {% endif %}
           <strong>{{e.titulo}}</strong><br/>
-          <span>{{precio.abonado|twoDec}}€</span> abonado, {{precio.compa|twoDec}}€ acompañante
+          <span>{{precio.abonado|twoDec}}€</span> abonado, {{compa|twoDec}}€ acompañante
         </p>
         <p class="lugar"><a href="{{e.lugar.url}}">{{e.lugar.txt}}</a></p>
       </div>
