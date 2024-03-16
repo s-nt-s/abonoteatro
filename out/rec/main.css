@@ -196,3 +196,12 @@ p.fechas::after {
     content: none; 
   }
 }
+a.logo {
+  text-decoration: none;
+}
+a.logo img {
+  height: 1.15em;
+  vertical-align: bottom;
+  margin: 0;
+  padding: 0;
+}
