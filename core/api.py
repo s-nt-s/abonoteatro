@@ -73,7 +73,7 @@ class Sesion(NamedTuple):
         return Api.URLDAY + str(self.id)
 
     def merge(self, **kwargs):
-        return Evento(**{**self._asdict(), **kwargs})
+        return Sesion(**{**self._asdict(), **kwargs})
 
     @staticmethod
     def build(*args, **kwargs):
