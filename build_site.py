@@ -47,7 +47,7 @@ def add_image(e: Evento):
         tr = tb.trim()
         if tr is not None and tr.isOK and im.isLandscape and tr.isPortrait:
             tb = tr
-        lc = tb.save(file, quality=90)
+        lc = tb.save(file, quality=80)
         if lc is None or lc.isKO:
             return (im, e)
     lc.url = PAGE_URL+'/'+local
