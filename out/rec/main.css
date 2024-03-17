@@ -198,6 +198,7 @@ a.logo {
 }
 a.logo img {
   height: 1.15em;
+  min-width: 1.15em;
   vertical-align: bottom;
   margin: 0;
   padding: 0;
