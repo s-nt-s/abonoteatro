@@ -112,13 +112,26 @@ ol.sesiones li {
   margin: 0;
 }
 
-div.evento img {
+div.evento img.cartel {
   max-width:100%;
   vertical-align: bottom;
 }
 
 div.img {
   position: relative;
+}
+div.img > div {
+  text-align: center;
+}
+div.img > div:has(img.cartel.loaded) {
+  background-color: #202020;
+}
+body.js div.evento img.cartel:not(.loaded) {
+  height: calc(min(var(--max-width), 100vw) * 9 / 16);
+  opacity: 0;
+}
+div.evento img.cartel.portrait {
+  max-height: calc(min(var(--max-width), 100vw) * 9 / 16);
 }
 
 span.categoria, a.zoom{
@@ -134,19 +147,6 @@ a.zoom {
   text-decoration: none;
   right: 0 !important;
   left: unset;
-}
-div.img > div {
-  text-align: center;
-}
-div.img > div:has(img.loaded) {
-  background-color: #202020;
-}
-body.js div.evento img:not(.loaded) {
-  max-height:250px;
-  opacity: 0;
-}
-div.evento img.portrait {
-  max-height:calc(min(var(--max-width), 100vw) * 9 / 16);
 }
 
 
