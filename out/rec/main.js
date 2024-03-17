@@ -179,7 +179,10 @@ function filtrar() {
       return;
     }
     const id = Number(e.id.substring(1));
-    if (okSession.has(id)) return;
+    if (okSession.has(id)) {
+      e.classList.remove("hide");
+      return;
+    }
     e.classList.add("hide")
   });
   if (categ == null) FormQuery.CSS.innerHTML = "";
