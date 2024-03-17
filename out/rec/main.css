@@ -4,9 +4,6 @@ body {
   margin: 0;
   --max-width: 500px;
 }
-body:not(.js) .needjs {
-  display: none;
-}
 .hide {
   display: none;
 }
