@@ -43,7 +43,7 @@
     </p>
     {% for (img, e) in eventos %}
     <div id="e{{e.id}}" class="evento {{e.categoria | simplify}}">
-      <div class="img">
+      <div class="img"{%if img.background%} style="--back: rgb{{img.background}}"{%endif%}>
         <div><img src="{{img.url}}" alt="{{e.titulo}}" class="cartel {{img.orientation}}" loading="lazy"/></div>
         <span class="categoria">{{e.categoria.title()}}</span>
         <a class="zoom" href="{{img.origin.url}}">🔍</span>

@@ -33,19 +33,22 @@ def add_image(e: Evento):
     file = OUT+local
     im = MyImage(e.img)
     if isfile(file):
-        lc = MyImage(file, parent=im)
+        lc = MyImage(file, parent=im, background=im.background)
     else:
         if im.isKO:
             return (im, e)
+        width = 500
+        height = [im.im.height, 300]
         tr = im.trim()
         if tr is not None and tr.isOK:
-            if (im.isLandscape and tr.isPortrait) or len(set(im.im.size).intersection(tr.im.size))==1:
+            if (im.isLandscape and tr.isPortrait) or \
+                len(set(im.im.size).intersection(tr.im.size))==1 or \
+                abs(im.im.height-tr.im.height)<(im.im.height*0.10):
+                height.append(im.thumbnail(width=width, height=min(height)).im.height+25)
                 im = tr
-        width = 500
-        height = im.height
         if im.isPortrait:
-            height = width*(9/16)
-        tb = im.thumbnail(width=width, height=min(height, 300))
+            height.append(width*(9/16))
+        tb = im.thumbnail(width=width, height=min(height))
         if tb is None or tb.isKO:
             return (im, e)
         lc = tb.save(file, quality=80)

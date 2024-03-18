@@ -4,7 +4,7 @@ from io import BytesIO
 import logging
 from os.path import dirname
 from os import makedirs
-from typing import List, Tuple, Any, NamedTuple, Union
+from typing import List, Tuple, Any, NamedTuple, Union, Dict
 from functools import cached_property
 from os.path import isfile
 
@@ -17,12 +17,36 @@ class CornerColor(NamedTuple):
     bottom_left: Tuple[int, int, int]
     bottom_right: Tuple[int, int, int]
 
+    def get_count(self) -> Dict[Tuple[int, int, int], int]:
+        count = {}
+        for c in self:
+            count[c] = count.get(c, 0) + 1
+        return count
+    
+    def get_most_common(self):
+        count = self.get_count()
+        order: List[Tuple[Tuple[int, int, int], int]] = sorted(count.items(), key=lambda kv:(kv[1], kv[0]))
+        color = order.pop()[0]
+        return color
+
 
 class MyImage:
-    def __init__(self, image: Union[str, Image.Image], parent: Image.Image = None):
+    def __init__(self, image: Union[str, Image.Image], parent: Image.Image = None, background: Tuple[int, int, int]=None):
         self.__path_or_image = image
         self.__url = None
         self.__parent = parent
+        self.__background = background
+        if self.__background is None:
+            corner = self.get_corner_colors()
+            if corner:
+                self.__background = corner.get_most_common()
+
+    @property
+    def background(self):
+        im = self
+        while im.__background is None and im.__parent is not None:
+            im = im.__parent
+        return im.__background
 
     @property
     def parent(self):
@@ -68,11 +92,8 @@ class MyImage:
         return None
 
     def trim(self):
-        colors = self.get_corner_colors()
-        count = {}
-        for c in colors:
-            count[c] = count.get(c, 0) + 1
-        order: List[Tuple[Any, int]] = sorted(count.items(), key=lambda kv:(kv[1], kv[0]))
+        count = self.get_corner_colors().get_count()
+        order: List[Tuple[Tuple[int, int, int], int]] = sorted(count.items(), key=lambda kv:(kv[1], kv[0]))
         color = order.pop()[0]
         im = self.__trim(color)
         if im is None or im.isKO:
@@ -85,6 +106,9 @@ class MyImage:
         im2 = im.__trim(color)
         if im2 is None or im2.isKO:
             return im
+        diff_area2 = im.area - im2.area
+        if diff_area2 <= (im.area - im2.area):
+            im2.__background = im.__background
         return im2
 
     def __trim(self, color):
@@ -100,9 +124,11 @@ class MyImage:
             logger.debug(f"trim: no tiene marco {self.origin.name}")
             return None
         im = self.im.crop(bbox)
-        return MyImage(im, parent=self)
+        return MyImage(im, parent=self, background=color)
 
     def get_corner_colors(self) -> CornerColor:
+        if self.im is None:
+            return None
         top_left_color = self.im.getpixel((0, 0))
         top_right_color = self.im.getpixel((self.im.width - 1, 0))
         bottom_left_color = self.im.getpixel((0, self.im.height - 1))
@@ -123,20 +149,12 @@ class MyImage:
         return not isinstance(self.im, Image.Image)
 
     @property
-    def width(self):
-        return self.im.size[0]
-
-    @property
-    def height(self):
-        return self.im.size[1]
-
-    @property
     def isLandscape(self):
-        return self.width >= self.height
+        return self.im.width >= self.im.height
 
     @property
     def isPortrait(self):
-        return self.width < self.height
+        return self.im.width < self.im.height
 
     @property
     def orientation(self):
@@ -149,7 +167,11 @@ class MyImage:
     def thumbnail(self, width: int, height: int):
         im = self.im.copy()
         im.thumbnail((round(width), round(height)))
-        return MyImage(im, parent=self)
+        return MyImage(im, parent=self, background=self.background)
+
+    @property
+    def area(self):
+        return self.im.width*self.im.height
 
     @property
     def name(self):
@@ -166,7 +188,7 @@ class MyImage:
         except IOError:
             logger.critical(f"No se pudo copiar {self.name} a {filename}", exc_info=True)
             return None
-        return MyImage(filename, parent=self)
+        return MyImage(filename, parent=self, background=self.background)
 
     @property
     def origin(self):
