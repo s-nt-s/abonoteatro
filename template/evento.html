@@ -6,7 +6,7 @@
   <meta content="width=device-width, initial-scale=1" name="viewport" />
   <meta name="Last-Modified" content="{{now.strftime('%Y-%m-%d %H:%M:%S')}}" />
   <meta name="Date" content="{{e.publicado}}" />
-  <link href="{{PAGE_URL}}/rec/main.css" rel="stylesheet"/>
+  <link href="{{PAGE_URL}}/rec/main.css" rel="stylesheet" />
   <script src="{{PAGE_URL}}/rec/hacks.js" type="text/javascript"></script>
   <script src="{{PAGE_URL}}/rec/img.js" type="text/javascript"></script>
   <title>{{e.titulo}}</title>
@@ -30,15 +30,19 @@
   <main>
     <div id="e{{e.id}}" class="evento">
       <div class="img">
-        <div><img src="{{img.url}}" alt="{{e.titulo}}" class="cartel {{img.orientation}}"/></div>
-        <a class="zoom" href="{{img.origin.url}}">🔍</span>
+        <div><img src="{{img.url}}" alt="{{e.titulo}}" class="cartel {{img.orientation}}" /></div>
+        <a class="atrapalo" title="Buscar en atrapalo"
+          href="https://www.atrapalo.com/busqueda/?pg=buscar&producto=ESP&keyword={{e.txt | quote_plus}}"><img
+            alt="Buscar en atrapalo" src="https://www.atrapalo.com/favicon.ico" /></span>
+          <a class="zoom" href="{{img.origin.url}}">🔍</span>
       </div>
       <div class="info">
         <p class="titulo">
-          {% if e.precio>0 %}<span title="{{e.precio|twoDec}}€ -> {{precio.abonado|twoDec}}€" class="descuento">{{e.precio | round | int}}€</span>
+          {% if e.precio>0 %}<span title="{{e.precio|twoDec}}€ -> {{precio.abonado|twoDec}}€"
+            class="descuento">{{e.precio | round | int}}€</span>
           {% else %}<span title="¿?€ -> {{precio.abonado|twoDec}}€" class="descuento">¿?€</span>
           {% endif %}
-          <strong>{{e.titulo}}</strong><br/>
+          <strong>{{e.titulo}}</strong><br />
           <span>{{precio.abonado|twoDec}}€</span> abonado, {{compa|twoDec}}€ acompañante
         </p>
         <p class="lugar"><a href="{{e.lugar.url}}">{{e.lugar.txt}}</a></p>
