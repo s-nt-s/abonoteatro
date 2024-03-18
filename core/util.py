@@ -112,6 +112,8 @@ def __simplify_html(html: str):
         if c.name != n.name or get_text(c) != get_text(n):
             continue
         n.unwrap()
+    for br in soup.select("p br"):
+        br.replace_with(" ")
     for n in soup.findAll("faketag"):
         n.unwrap()
     return clean_html(str(soup))

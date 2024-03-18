@@ -526,6 +526,7 @@ class Api:
         if path == "cine_peliculas.php":
             return "cine"
 
+        cabadrag = "cabaret / drag"
         humor = "humor / impro"
         musica = "musical / concierto"
         expomus = "exposición / museo"
@@ -551,9 +552,9 @@ class Api:
             return humor
         if _or(name, "flamenco"):
             return "flamenco"
-        if _or(name, "cabaret"):
-            return "cabaret"
-        if _or(name, "bingo", "drag", "karaoke", "circo", "parque de atracciones"):
+        if _or(name, "cabaret", "drag", "hole"):
+            return cabadrag
+        if _or(name, "bingo", "karaoke", "circo", "parque de atracciones"):
             return "otros"
         if _or(name, "b vocal", "opera", "musica en vivo", "jazz", "tributo", "sinfonico", "musical", "concierto", r"boleros?", "orquesta", "pianista"):
             return musica
@@ -635,7 +636,9 @@ class Api:
             info,
             "cabaret"
         ):
-            return "cabaret"
+            return cabadrag
+        if _or(info, "tematica erotica") and cat == 19:
+            return cabadrag
         categoria = {
             11: "teatro",
             15: "magia",
