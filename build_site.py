@@ -37,16 +37,17 @@ def add_image(e: Evento):
     else:
         if im.isKO:
             return (im, e)
+        tr = im.trim()
+        if tr is not None and tr.isOK:
+            if (im.isLandscape and tr.isPortrait) or len(set(im.im.size).intersection(tr.im.size))==1:
+                im = tr
         width = 500
         height = im.height
         if im.isPortrait:
             height = width*(9/16)
-        tb = im.thumbnail(width=width, height=height)
+        tb = im.thumbnail(width=width, height=min(height, 300))
         if tb is None or tb.isKO:
             return (im, e)
-        tr = tb.trim()
-        if tr is not None and tr.isOK and im.isLandscape and tr.isPortrait:
-            tb = tr
         lc = tb.save(file, quality=80)
         if lc is None or lc.isKO:
             return (im, e)
