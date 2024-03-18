@@ -108,6 +108,7 @@ j.create_script(
 )
 j.save(
     "index.html",
+    favicon="🎭",
     eventos=img_eventos,
     precio=precio,
     now=now,
@@ -122,6 +123,7 @@ j.save(
 for img, e in img_eventos:
     j.save(
         "evento.html",
+        favicon="🎭",
         destino=f"e/{e.id}.html",
         e=e,
         img=img,

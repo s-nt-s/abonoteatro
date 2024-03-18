@@ -4,6 +4,10 @@
 <head>
   <meta charset="utf-8" />
   <meta content="width=device-width, initial-scale=1" name="viewport" />
+  {%if favicon is defined%}
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>{{favicon}}</text></svg>">
+  {%endif%}
   <title>Abono Teatro</title>
   <meta name="Last-Modified" content="{{now.strftime('%Y-%m-%d %H:%M:%S')}}" />
   <link href="{{PAGE_URL}}/rec/main.css" rel="stylesheet"/>
@@ -21,22 +25,22 @@
   {% with root="." %} {% include "header.html" %} {% endwith %}
   <main>
     <p class="fechas needjs">
-    <input type="date" id="ini" value="{{fecha.ini}}" min="{{fecha.ini}}" max="{{fecha.fin}}" title="Fecha de inicio"> 
-    <input type="date" id="fin" value="{{fecha.fin}}" min="{{fecha.ini}}" max="{{fecha.fin}}" title="Fecha de fin">
+      <input type="date" id="ini" value="{{fecha.ini}}" min="{{fecha.ini}}" max="{{fecha.fin}}" title="Fecha de inicio">
+      <input type="date" id="fin" value="{{fecha.fin}}" min="{{fecha.ini}}" max="{{fecha.fin}}" title="Fecha de fin">
     </p>
     <p class="categoria needjs">
-    <select id="categoria">
-      <option value="">Todos ({{count}})</option>
-      {% for c, num in categorias.items()|sort %}
-      {% if c != "otros"%}
-      <option value="{{c | simplify }}" data-txt="{{c.title()}}">{{c.title()}} ({{num}})</option>
-      {% endif %}
-      {% endfor %}
-      {% if "otros" in categorias %}
-      <option value="otros" data-txt="Otros">Otros ({{categorias['otros']}})</option>
-      {% endif %}
-    </select>
-  </p>
+      <select id="categoria">
+        <option value="">Todos ({{count}})</option>
+        {% for c, num in categorias.items()|sort %}
+        {% if c != "otros"%}
+        <option value="{{c | simplify }}" data-txt="{{c.title()}}">{{c.title()}} ({{num}})</option>
+        {% endif %}
+        {% endfor %}
+        {% if "otros" in categorias %}
+        <option value="otros" data-txt="Otros">Otros ({{categorias['otros']}})</option>
+        {% endif %}
+      </select>
+    </p>
     {% for (img, e) in eventos %}
     <div id="e{{e.id}}" class="evento {{e.categoria | simplify}}">
       <div class="img">
