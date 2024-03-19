@@ -3,6 +3,10 @@ from typing import List, Dict, Union, Set, Tuple
 from bs4 import Tag, BeautifulSoup
 from minify_html import minify
 import unicodedata
+import requests
+import logging
+
+logger = logging.getLogger(__name__)
 
 re_sp = re.compile(r"\s+")
 
@@ -119,7 +123,7 @@ def __simplify_html(html: str):
     return clean_html(str(soup))
 
 
-def clean_js_obj(obj: Union[List, Dict]):
+def clean_js_obj(obj: Union[List, Dict, str]):
     if isinstance(obj, dict):
         for k in set(obj.keys()).intersection(("nabonado", )):
             del obj[k]
@@ -211,3 +215,35 @@ def dict_add(obj: Dict[str, Set], a: str, b: Union[str, int, List[str], Set[str]
 
 def dict_tuple(obj: Dict[str, Union[Set, List, Tuple]]):
     return {k: tuple(sorted(set(v))) for k, v in obj.items()}
+
+
+def safe_get_list_dict(url) -> List[Dict]:
+    js = []
+    try:
+        r = requests.get(url)
+        js = r.json()
+    except Exception:
+        logger.critical(url+" no se puede recuperar", exc_info=True)
+        pass
+    if not isinstance(js, list):
+        logger.critical(url+" no es una lista")
+        return []
+    for i in js:
+        if not isinstance(i, dict):
+            logger.critical(url+" no es una lista de diccionarios")
+            return []
+    return js
+
+
+def safe_get_dict(url) -> Dict:
+    js = {}
+    try:
+        r = requests.get(url)
+        js = r.json()
+    except Exception:
+        logger.critical(url+" no se puede recuperar", exc_info=True)
+        pass
+    if not isinstance(js, dict):
+        logger.critical(url+" no es un diccionario")
+        return {}
+    return js

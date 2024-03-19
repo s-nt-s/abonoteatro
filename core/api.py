@@ -13,7 +13,6 @@ import json
 from urllib.parse import quote
 from .util import clean_js_obj, clean_txt, get_obj, trim, get_text, clean_html, simplify_html
 from unidecode import unidecode
-import requests
 from .wpjson import WP
 
 from .filemanager import FM
@@ -253,9 +252,10 @@ class Api:
         "https://www.abonoteatro.com/catalogo/cine_peliculas.php",
     )
 
-    def __init__(self):
+    def __init__(self, publish=None):
         self.__w = None
         self.__base64: Dict[str, str] = {}
+        self.publish: Dict[int, str] = publish or {}
 
     def get(self, url, *args, label_log=None, **kwargs):
         if self.w.url == url and len(args) == 0 and len(kwargs) == 0:
@@ -447,37 +447,6 @@ class Api:
         self.get(url)
         logger.info("GET "+url)
         return self.w.soup
-
-    @cached_property
-    def publish(self):
-        fch: Dict[int, str] = {}
-        for e in self.__get_previous_json():
-            f = e.get('publicado')
-            if isinstance(f, str) and len(f) > 0:
-                fch[e['id']] = f
-        return fch
-
-    def __get_previous_json(self):
-        url = environ.get('PAGE_URL')+'/eventos.json'
-        js = []
-        try:
-            r = requests.get(url)
-            js = r.json()
-        except Exception:
-            logger.critical(url+" no se puede recuperar", exc_info=True)
-            pass
-        if not isinstance(js, list) or len(js) == 0:
-            logger.critical(url+" no es una lista")
-            return []
-        if not isinstance(js[0], dict):
-            logger.critical(url+" no es una lista de diccionarios")
-            return []
-        e = js[0]
-        if "id" not in e or not isinstance(e['id'], int):
-            logger.critical(
-                url+" no es una lista de diccionarios con campo id: int")
-            return []
-        return js
 
     def find_category(self, url: str, js: Dict):
         _id = js['id']

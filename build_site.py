@@ -2,16 +2,17 @@
 
 from core.api import Api, Evento
 from core.j2 import Jnj2
-from datetime import datetime
+from datetime import datetime, timedelta
 from core.log import config_log
 from core.rss import EventosRss
 from core.img import MyImage
-from core.util import dict_add
+from core.util import dict_add, safe_get_list_dict, safe_get_dict
 import logging
 from os import environ
 from os.path import isfile
 from typing import Dict, Set
 from statistics import multimode
+from core.filemanager import FM
 
 
 import argparse
@@ -26,6 +27,7 @@ OUT = "out/"
 config_log("log/build_site.log")
 logger = logging.getLogger(__name__)
 now = datetime.now()
+too_old = (now - timedelta(days=3)).strftime("%Y-%m-%d 00:00")
 
 
 def get_trim_image(im: MyImage):
@@ -34,13 +36,13 @@ def get_trim_image(im: MyImage):
         return None
     if (im.isLandscape and tr.isPortrait):
         return tr
-    if len(set(im.im.size).intersection(tr.im.size))==1:
+    if len(set(im.im.size).intersection(tr.im.size)) == 1:
         return tr
     diff_height = abs(im.im.height-tr.im.height)
     diff_width = abs(im.im.width-tr.im.width)
-    if diff_height<(im.im.height*0.10) and diff_width>(im.im.width*0.15):
+    if diff_height < (im.im.height*0.10) and diff_width > (im.im.width*0.15):
         return tr
-    if diff_width<(im.im.width*0.10) and diff_height>(im.im.height*0.15):
+    if diff_width < (im.im.width*0.10) and diff_height > (im.im.height*0.15):
         return tr
     return None
 
@@ -67,8 +69,21 @@ def add_image(e: Evento):
     return (lc, e)
 
 
+logger.info("Recuperar fechas de publicación")
+fechas = {}
+for k, f in safe_get_dict(environ['PAGE_URL']+'/fechas.json').items():
+    if f >= too_old:
+        fechas[int(k)] = f
+for e in safe_get_list_dict(environ['PAGE_URL']+'/eventos.json'):
+    f = e.get('publicado')
+    if not isinstance(f, str) or len(f) == 0:
+        continue
+    if e['id'] not in fechas or f < fechas[e['id']]:
+        fechas[e['id']] = f
+logger.info("Fechas recuperadas: "+str(fechas))
+
 logger.info("Recuperar eventos")
-eventos = list(Api().get_events())
+eventos = list(Api(publish=fechas).get_events())
 logger.info(f"{len(eventos)} recuperados")
 categorias = {}
 sesiones: Dict[str, Set[int]] = {}
@@ -76,6 +91,7 @@ sin_sesiones: Set[int] = set()
 cine_precio = []
 
 for e in eventos:
+    fechas[e.id] = e.publicado
     categorias[e.categoria] = categorias.get(e.categoria, 0) + 1
     if e.categoria == "cine":
         if e.precio > 0:
@@ -102,13 +118,15 @@ precio = dict(
 
 eventos = sorted(
     eventos,
-    key=lambda e: (e.publicado, e.precio, len(e.sesiones), e.txt, e.id),
+    key=lambda e: (e.publicado, e.creado or e.publicado, e.precio, len(e.sesiones), e.txt, e.id),
     reverse=True
 )
 
 logger.info("Añadiendo imágenes")
 img_eventos = tuple(map(add_image, eventos))
 logger.info("Creando web")
+
+FM.dump("out/fechas.json", fechas)
 
 j = Jnj2("template/", OUT)
 j.create_script(
