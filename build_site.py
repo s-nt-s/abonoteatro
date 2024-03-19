@@ -10,9 +10,10 @@ from core.util import dict_add, safe_get_list_dict, safe_get_dict
 import logging
 from os import environ
 from os.path import isfile
-from typing import Dict, Set
+from typing import Dict, Set, Tuple
 from statistics import multimode
 from core.filemanager import FM
+import math
 
 
 import argparse
@@ -28,6 +29,15 @@ config_log("log/build_site.log")
 logger = logging.getLogger(__name__)
 now = datetime.now()
 too_old = (now - timedelta(days=3)).strftime("%Y-%m-%d 00:00")
+white = (255, 255, 255)
+
+
+def distance_to_white(*color) -> Tuple[int]:
+    arr = []
+    for c in color:
+        d = math.sqrt(sum([(c1 - c2) ** 2 for c1, c2 in zip(c, white)]))
+        arr.append(d)
+    return tuple(arr)
 
 
 def get_trim_image(im: MyImage):
@@ -40,9 +50,29 @@ def get_trim_image(im: MyImage):
         return tr
     diff_height = abs(im.im.height-tr.im.height)
     diff_width = abs(im.im.width-tr.im.width)
-    if diff_height < (im.im.height*0.10) and diff_width > (im.im.width*0.15):
+    if diff_height < (im.im.height*0.10) and diff_width > (im.im.width*0.20):
         return tr
-    if diff_width < (im.im.width*0.10) and diff_height > (im.im.height*0.15):
+    if diff_width < (im.im.width*0.10) and diff_height > (im.im.height*0.20):
+        return tr
+    dist = distance_to_white(im.get_corner_colors().get_most_common())
+    if max(dist) < 260:
+        return tr
+    return None
+
+
+def get_trim_image(im: MyImage):
+    tr = im.trim()
+    if tr is None or tr.isKO:
+        return None
+    if (im.isLandscape and tr.isPortrait):
+        return tr
+    if len(set(im.im.size).intersection(tr.im.size))==1:
+        return tr
+    diff_height = abs(im.im.height-tr.im.height)
+    diff_width = abs(im.im.width-tr.im.width)
+    if diff_height<(im.im.height*0.10) and diff_width>(im.im.width*0.15):
+        return tr
+    if diff_width<(im.im.width*0.10) and diff_height>(im.im.height*0.15):
         return tr
     return None
 
