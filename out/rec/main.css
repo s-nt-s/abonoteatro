@@ -130,7 +130,7 @@ body.js div.evento img.cartel:not(.loaded) {
   height: calc(min(var(--max-width), 100vw) * 9 / 16);
   opacity: 0;
 }
-div.evento img.cartel.portrait {
+div.evento img.cartel {
   max-height: calc(min(var(--max-width), 100vw) * 9 / 16);
 }
 

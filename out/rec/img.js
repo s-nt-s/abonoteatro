@@ -1,8 +1,6 @@
 function add_class_to_img(i) {
     if (!i.complete || i.naturalWidth == 0) return;
     i.classList.add("loaded");
-    if (i.naturalWidth>=i.naturalHeight) i.classList.add("landscape");
-    else i.classList.add("portrait");
 }
 
 document.addEventListener("DOMContentLoaded", function () {
