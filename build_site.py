@@ -28,6 +28,23 @@ logger = logging.getLogger(__name__)
 now = datetime.now()
 
 
+def get_trim_image(im: MyImage):
+    tr = im.trim()
+    if tr is None or tr.isKO:
+        return None
+    if (im.isLandscape and tr.isPortrait):
+        return tr
+    if len(set(im.im.size).intersection(tr.im.size))==1:
+        return tr
+    diff_height = abs(im.im.height-tr.im.height)
+    diff_width = abs(im.im.width-tr.im.width)
+    if diff_height<(im.im.height*0.10) and diff_width>(im.im.width*0.15):
+        return tr
+    if diff_width<(im.im.width*0.10) and diff_height>(im.im.height*0.15):
+        return tr
+    return None
+
+
 def add_image(e: Evento):
     local = f"img/{e.id}.jpg"
     file = OUT+local
@@ -38,16 +55,8 @@ def add_image(e: Evento):
         if im.isKO:
             return (im, e)
         width = 500
-        height = [im.im.height, 300]
-        tr = im.trim()
-        if tr is not None and tr.isOK:
-            if (im.isLandscape and tr.isPortrait) or \
-                len(set(im.im.size).intersection(tr.im.size))==1 or \
-                abs(im.im.height-tr.im.height)<(im.im.height*0.10):
-                height.append(im.thumbnail(width=width, height=min(height)).im.height+25)
-                im = tr
-        if im.isPortrait:
-            height.append(width*(9/16))
+        height = [im.im.height, 300, width*(9/16)]
+        im = get_trim_image(im) or im
         tb = im.thumbnail(width=width, height=min(height))
         if tb is None or tb.isKO:
             return (im, e)

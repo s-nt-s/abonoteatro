@@ -154,7 +154,7 @@ class MyImage:
 
     @property
     def isPortrait(self):
-        return self.im.width < self.im.height
+        return not self.isLandscape
 
     @property
     def orientation(self):
