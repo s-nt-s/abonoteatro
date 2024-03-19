@@ -519,7 +519,7 @@ class Api:
             return "magia"
         if _or(name, "impro", "el humor de", "clown"):
             return humor
-        if _or(name, "flamenco"):
+        if _or(name, "flamenco", "saeta flamenca"):
             return "flamenco"
         if _or(name, "cabaret", "drag", "hole"):
             return cabadrag
@@ -597,7 +597,6 @@ class Api:
             info,
             "podcast",
             "globoflexia",
-            "espectaculo para niños",
             "lanzamiento de su nuevo libro"
         ):
             return "otros"
