@@ -158,7 +158,7 @@ logger.info("Creando web")
 
 FM.dump("out/fechas.json", fechas)
 
-j = Jnj2("template/", OUT)
+j = Jnj2("template/", OUT, favicon="🎭")
 j.create_script(
     "rec/info.js",
     EVENTOS=set((e.id for e in eventos)),
@@ -168,7 +168,6 @@ j.create_script(
 )
 j.save(
     "index.html",
-    favicon="🎭",
     eventos=img_eventos,
     precio=precio,
     now=now,
@@ -183,7 +182,6 @@ j.save(
 for img, e in img_eventos:
     j.save(
         "evento.html",
-        favicon="🎭",
         destino=f"e/{e.id}.html",
         e=e,
         img=img,

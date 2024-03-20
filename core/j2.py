@@ -7,6 +7,7 @@ from unidecode import unidecode
 from _collections_abc import dict_items
 from os.path import relpath, dirname, exists, isfile
 from os import environ, makedirs
+from base64 import b64encode
 
 import bs4
 from jinja2 import Environment, FileSystemLoader
@@ -128,7 +129,7 @@ def get_default_target_links(soup: bs4.Tag):
 
 class Jnj2():
 
-    def __init__(self, origen, destino, pre=None, post=None):
+    def __init__(self, origen, destino, favicon=None, pre=None, post=None):
         self.j2_env = Environment(
             loader=FileSystemLoader(origen), trim_blocks=True)
         self.j2_env.filters['millar'] = millar
@@ -143,6 +144,14 @@ class Jnj2():
         self.post = post
         self.lastArgs = None
         self.minify = environ.get("MINIFY") == "1"
+        self.favicon = favicon
+
+    def get_svg_favicon(self):
+        if self.favicon is None:
+            return None
+        svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">{self.favicon}</text></svg>'
+        b64 = b64encode(bytes(svg, 'utf-8')).decode('utf-8')
+        return "data:image/svg+xml;base64,"+b64
 
     def save(self, template, destino=None, parse=None, **kwargs):
         self.lastArgs = kwargs
@@ -152,6 +161,7 @@ class Jnj2():
         html = out.render(
             PAGE_URL=PAGE_URL,
             REPO_URL=REPO_URL,
+            favicon=self.get_svg_favicon(),
             **kwargs
         )
         if self.pre:
@@ -167,6 +177,7 @@ class Jnj2():
         html = self.do_relative(directorio, html)
         html = self.do_minimity(html)
         html = self.set_target(html)
+        html = self.add_favicon(html)
 
         if not exists(directorio):
             makedirs(directorio)
@@ -174,6 +185,14 @@ class Jnj2():
         with open(destino, "wb") as fh:
             fh.write(bytes(html, 'UTF-8'))
         return html
+
+    def add_favicon(self, html: str):
+        favicon = self.get_svg_favicon()
+        if favicon is None:
+            return html
+        soup = bs4.BeautifulSoup(html, 'html.parser')
+        soup.find("head").append(toTag(f'<link rel="icon" href="{favicon}"/>'))
+        return str(soup)
 
     def do_relative(self, directorio: str, html: str):
         path = "./" + directorio[len(self.destino):].lstrip("/")
