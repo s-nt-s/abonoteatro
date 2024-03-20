@@ -60,23 +60,6 @@ def get_trim_image(im: MyImage):
     return None
 
 
-def get_trim_image(im: MyImage):
-    tr = im.trim()
-    if tr is None or tr.isKO:
-        return None
-    if (im.isLandscape and tr.isPortrait):
-        return tr
-    if len(set(im.im.size).intersection(tr.im.size))==1:
-        return tr
-    diff_height = abs(im.im.height-tr.im.height)
-    diff_width = abs(im.im.width-tr.im.width)
-    if diff_height<(im.im.height*0.10) and diff_width>(im.im.width*0.15):
-        return tr
-    if diff_width<(im.im.width*0.10) and diff_height>(im.im.height*0.15):
-        return tr
-    return None
-
-
 def add_image(e: Evento):
     local = f"img/{e.id}.jpg"
     file = OUT+local
