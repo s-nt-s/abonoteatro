@@ -78,9 +78,9 @@ function isDate(s) {
 class FormQuery {
   static clean(obj) {
     if (!INPUT_DATE_SUPPORT) {
-        obj.ini = null;
-        obj.fin = null;
-        return obj;
+      obj.ini = null;
+      obj.fin = null;
+      return obj;
     }
     if (obj.ini == FormQuery.MIN_DATE && obj.fin == FormQuery.MAX_DATE) {
       obj.ini = null;
@@ -107,13 +107,13 @@ class FormQuery {
     let query = qr.length ? "?" + qr.join("&") : "";
     const title = document.querySelector("title");
     const select = document.getElementById("categoria");
-    Array.from(select.options).forEach(o=>{
-      const txt = (o.getAttribute("data-txt")??"Todos");
-      const cat = o.value??"";
-      if (cat.length==0) o.innerHTML = txt + " ("+ document.querySelectorAll("div.evento:not(.hide)").length+")"
-      else o.innerHTML = txt + " ("+ document.querySelectorAll("div.evento."+cat+":not(.hide)").length+")"
+    Array.from(select.options).forEach(o => {
+      const txt = (o.getAttribute("data-txt") ?? "Todos");
+      const cat = o.value ?? "";
+      if (cat.length == 0) o.innerHTML = txt + " (" + document.querySelectorAll("div.evento:not(.hide)").length + ")"
+      else o.innerHTML = txt + " (" + document.querySelectorAll("div.evento." + cat + ":not(.hide)").length + ")"
     })
-    const txt = select.selectedOptions[0].getAttribute("data-txt")??"".trim();
+    const txt = select.selectedOptions[0].getAttribute("data-txt") ?? "".trim();
     if (txt == null || txt.length == 0) title.textContent = window.__title__;
     else title.textContent = window.__title__ + ": " + txt;
     if (document.location.search == query) return;
@@ -138,11 +138,11 @@ class FormQuery {
       fin: null,
     };
     if (search == null) return d;
-    const dts = new Set();
+    const dts = [];
     search.split("&").forEach((v) => {
       if (isDate(v)) {
         if (v > FormQuery.MAX_DATE || v < FormQuery.MIN_DATE) return;
-        dts.add(v);
+        dts.push(v);
         return;
       }
       if (
@@ -150,9 +150,9 @@ class FormQuery {
       )
         d.categoria = v;
     });
-    const dates = [...dts].sort();
-    if (dates.length > 0) d.ini = dates[0];
-    if (dates.length > 1) d.fin = dates[dates.length - 1];
+    dts.sort();
+    if (dts.length > 0) d.ini = dts[0];
+    if (dts.length > 1) d.fin = dts[dts.length - 1];
     return FormQuery.clean(d);
   }
 }
@@ -187,30 +187,30 @@ function filtrar() {
   });
   if (categ == null) FormQuery.CSS.innerHTML = "";
   else {
-    const style = FormQuery.CATEGORIES.filter(c=>c!=categ).map(c=>"div.evento."+c).join(", ");
-    FormQuery.CSS.innerHTML = style +" {display:none}";
+    const style = FormQuery.CATEGORIES.filter(c => c != categ).map(c => "div.evento." + c).join(", ");
+    FormQuery.CSS.innerHTML = style + " {display:none}";
   }
   FormQuery.form_to_query();
   return;
 }
 
 function fixDates() {
-    const fin = document.getElementById("fin");
-    const i = getValDate("ini");
-    const f = getValDate("fin");
-    fin.setAttribute("min", i??FormQuery.MIN_DATE);
-    if (i==null || f==null) return;
-    if (i<=f) return;
-    fin.value = i;
+  const fin = document.getElementById("fin");
+  const i = getValDate("ini");
+  const f = getValDate("fin");
+  fin.setAttribute("min", i ?? FormQuery.MIN_DATE);
+  if (i == null || f == null) return;
+  if (i <= f) return;
+  fin.value = i;
 }
 
 document.addEventListener("DOMContentLoaded", function () {
   FormQuery.CSS = document.getElementById("jscss");
   FormQuery.MIN_DATE = getAtt("ini", "min");
   FormQuery.MAX_DATE = getAtt("ini", "max");
-  FormQuery.CATEGORIES = Array.from(document.getElementById("categoria").options).flatMap(o=>{
+  FormQuery.CATEGORIES = Array.from(document.getElementById("categoria").options).flatMap(o => {
     const v = o.value.trim();
-    return (v.length==0)?[]:v;
+    return (v.length == 0) ? [] : v;
   })
   window.__title__ = document.querySelector("title").textContent.trim();
   FormQuery.query_to_form();
