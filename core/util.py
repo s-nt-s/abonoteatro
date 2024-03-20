@@ -151,6 +151,7 @@ def clean_txt(s: str):
         s = s.title()
     s = re.sub(r"\\", "", s)
     s = re.sub(r"[´”]", "'", s)
+    s = re.sub(r"\s*[\.,]+\s*$", "", s)
     s = unicodedata.normalize('NFC', s)
     return s
 
