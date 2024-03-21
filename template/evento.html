@@ -36,6 +36,7 @@
     <div id="e{{e.id}}" class="evento">
       <div class="img"{%if img.background%} style="--back: rgb{{img.background}}"{%endif%}>
         <div><img src="{{img.url}}" alt="{{e.titulo}}" class="cartel {{img.orientation}}" /></div>
+        {% if e.isInfantil %}<span class="infantil" title="Evento infantil/familiar">🚸</span>{%endif%}
         {% if e.categoria != "cine" %}
         <a class="atrapalo" title="Buscar en atrapalo"
           href="https://www.atrapalo.com/busqueda/?pg=buscar&producto=ESP&keyword={{e.txt | quote_plus}}"><img

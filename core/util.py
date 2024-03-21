@@ -5,6 +5,7 @@ from minify_html import minify
 import unicodedata
 import requests
 import logging
+from unidecode import unidecode
 
 logger = logging.getLogger(__name__)
 
@@ -248,3 +249,53 @@ def safe_get_dict(url) -> Dict:
         logger.critical(url+" no es un diccionario")
         return {}
     return js
+
+
+def plain_text(s: Union[str, Tag], is_html=False):
+    if s is None:
+        return None
+    if isinstance(s, str) and is_html:
+        s = BeautifulSoup(s, "html.parser")
+    if isinstance(s, Tag):
+        for n in s.findAll(["p", "br"]):
+            n.insert_after(" ")
+        s = get_text(s)
+    faken = "&%%%#%%%#%%#%%%%%%&"
+    s = re.sub(r"[,\.:\(\)\[\]¡!¿\?]", " ", s).lower()
+    s = s.replace("ñ", faken)
+    s = unidecode(s)
+    s = s.replace(faken, "ñ")
+    s = re_sp.sub(" ", s).strip()
+    if len(s) == 0:
+        return None
+    return s
+
+
+def re_or(s: str, *args: Union[str, Tuple[str]]):
+    if s is None or len(s) == 0 or len(args) == 0:
+        return None
+    for r in args:
+        if isinstance(r, tuple):
+            b = re_and(s, *r)
+            if b is not None:
+                return b
+        elif re.search(r"\b" + r + r"\b", s):
+            return r
+    return None
+
+
+def re_and(s: str, *args: Union[str, Tuple[str]]):
+    if s is None or len(s) == 0 or len(args) == 0:
+        return None
+    arr = []
+    for r in args:
+        if isinstance(r, tuple):
+            b = re_or(s, *r)
+            if b is None:
+                return None
+            arr.append(b)
+        elif re.search(r"\b" + r + r"\b", s):
+            arr.append(r)
+        else:
+            return None
+    return " AND ".join(arr)

@@ -11,8 +11,7 @@ from functools import cached_property
 import base64
 import json
 from urllib.parse import quote
-from .util import clean_js_obj, clean_txt, get_obj, trim, get_text, clean_html, simplify_html
-from unidecode import unidecode
+from .util import clean_js_obj, clean_txt, get_obj, trim, get_text, clean_html, simplify_html, re_or, re_and, plain_text
 from .wpjson import WP
 
 from .filemanager import FM
@@ -191,6 +190,27 @@ class Evento(NamedTuple):
             if e.fecha is not None:
                 fechas.add(e.fecha)
         return tuple(sorted(fechas))
+
+    @property
+    def isInfantil(self):
+        t = plain_text(self.titulo)
+        if re_or(t, "para niños", "familiar"):
+            return True
+        i = plain_text(self.fichahtml, is_html=True)
+        if re_or(
+            i, 
+            "los mas pequeños",
+            "publico infantil",
+            "para toda la familia",
+            "espectaculo recomendado para niños",
+            "a partir de 3 años",
+            "la niñez que llevamos dentro",
+            "pirata garrapata"
+        ):
+            return True
+        if re_and(i, "niños", "familiar"):
+            return True
+        return False
 
     @staticmethod
     def create(js: Dict, detail: Tag, categoria: str, sesiones: Tuple[Sesion]):
@@ -452,44 +472,19 @@ class Api:
         _id = js['id']
         cat = js['id_categoria']
 
-        def _plan_text(s: str):
-            if s is None:
-                return None
-            faken = "&%%%#%%%#%%#%%%%%%&"
-            s = re.sub(r"[,\.:\(\)\[\]¡!¿\?]", " ", s).lower()
-            s = s.replace("ñ", faken)
-            s = unidecode(s)
-            s = s.replace(faken, "ñ")
-            s = re_sp.sub(" ", s).strip()
-            if len(s) == 0:
-                return None
-            return s
-
-        def _txt(s: str):
-            if s is not None and len(s.strip()) > 0:
-                s = re_sp.sub(" ", s)
-                soup = BeautifulSoup(s, "html.parser")
-                for n in soup.findAll(["p", "br"]):
-                    n.insert_after(" ")
-                return get_text(soup)
-
         def _or(s: str, *args):
-            if s is None or len(s) == 0 or len(args) == 0:
-                return False
-            for r in args:
-                if re.search(r"\b" + r + r"\b", s):
-                    logger.debug(f"{_id} cumple {r}")
-                    return True
+            b = re_or(s, *args)
+            if b is not None:
+                logger.debug(f"{_id} cumple {b}")
+                return True
             return False
 
         def _and(s: str, *args):
-            if s is None or len(s) == 0 or len(args) == 0:
-                return False
-            for r in args:
-                if not re.search(r"\b" + r + r"\b", s):
-                    return False
-            logger.debug(f"{_id} cumple AND{args}")
-            return True
+            b = re_and(s, *args)
+            if b is not None:
+                logger.debug(f"{_id} cumple {b}")
+                return True
+            return False
 
         path = url.rstrip("/").split("/")[-1]
         if path == "cine_peliculas.php":
@@ -499,10 +494,10 @@ class Api:
         humor = "humor / impro"
         musica = "musical / concierto"
         expomus = "exposición / museo"
-        name = _plan_text(js['name'] + " "+(js['sub'] or ""))
-        info = _plan_text(_txt((js['info'] or "")+" "+(js['condicion'] or "")))
+        name = plain_text(js['name'] + " "+(js['sub'] or ""))
+        info = plain_text((js['info'] or "")+" "+(js['condicion'] or ""), is_html=True)
         name_info = (name+" "+(info or "")).strip()
-        recinto = _plan_text(js['recinto']) or ""
+        recinto = plain_text(js['recinto']) or ""
         if recinto == "wizink center baloncesto":
             return "otros"
         if _or(name+" "+recinto, "autocine", "cinesa", "cinesur", "yelmo", "mk2"):
@@ -577,7 +572,7 @@ class Api:
             return humor
         if _or(info, "mentalista", "prestidigitador", "mentalismo"):
             return "magia"
-        if _or(info, "humor", "humores", "risas") and _or(info, "improvisar", "improvisacion", "comicos"):
+        if _and(info, ("humor", "humores", "risas"), ("improvisar", "improvisacion", "comicos")):
             return humor
         if _and(info, "show", "comicos?"):
             return humor

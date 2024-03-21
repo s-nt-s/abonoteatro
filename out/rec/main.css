@@ -134,13 +134,21 @@ div.evento img.cartel {
   max-height: calc(min(var(--max-width), 100vw) * 9 / 16);
 }
 
-span.categoria, a.zoom, a.atrapalo{
+span.categoria, a.zoom, a.atrapalo, span.infantil {
   position: absolute;
   bottom: 0px;
   margin: 0;
   left: 0;
   background-color: rgba(0, 0, 0, 0.5);
   color: white;
+  padding: 5px;
+}
+span.infantil {
+  top: 0px;
+  bottom: unset !important;
+  font-size: 1.5em;
+  cursor: help;
+  background-color: unset !important;
   padding: 5px;
 }
 a.zoom {

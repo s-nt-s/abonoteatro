@@ -41,6 +41,7 @@
     <div id="e{{e.id}}" class="evento {{e.categoria | simplify}}">
       <div class="img"{%if img.background%} style="--back: rgb{{img.background}}"{%endif%}>
         <div><img src="{{img.url}}" alt="{{e.titulo}}" class="cartel {{img.orientation}}" loading="lazy"/></div>
+        {% if e.isInfantil %}<span class="infantil" title="Evento infantil/familiar">🚸</span>{%endif%}
         <span class="categoria">{{e.categoria.title()}}</span>
         <a class="zoom" href="{{img.origin.url}}">🔍</span>
       </div>
