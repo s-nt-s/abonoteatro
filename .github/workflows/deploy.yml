@@ -23,6 +23,9 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - name: Set TimeZone
+        run: |
+          sudo timedatectl set-timezone "Europe/Madrid"
       - name: Set ENV variables
         run: |
           REPO_NAME="${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}"
