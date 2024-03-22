@@ -4,9 +4,10 @@ from io import BytesIO
 import logging
 from os.path import dirname
 from os import makedirs
-from typing import List, Tuple, Any, NamedTuple, Union, Dict
-from functools import cached_property
+from typing import List, Tuple, NamedTuple, Union, Dict
+from functools import cached_property, cache
 from os.path import isfile
+from pytesseract import image_to_string
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ class CornerColor(NamedTuple):
         for c in self:
             count[c] = count.get(c, 0) + 1
         return count
-    
+
     def get_most_common(self):
         count = self.get_count()
         order: List[Tuple[Tuple[int, int, int], int]] = sorted(count.items(), key=lambda kv:(kv[1], kv[0]))
@@ -40,6 +41,11 @@ class MyImage:
             corner = self.get_corner_colors()
             if corner:
                 self.__background = corner.get_most_common()
+
+    @staticmethod
+    @cache
+    def get(url: str):
+        return MyImage(url)
 
     @property
     def background(self):
@@ -196,3 +202,9 @@ class MyImage:
         while p.parent is not None:
             p = p.parent
         return p
+
+    @cached_property
+    def txt(self):
+        if self.isKO:
+            return None
+        return image_to_string(self.im, lang="spa")

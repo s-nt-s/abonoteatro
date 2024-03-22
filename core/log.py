@@ -14,6 +14,7 @@ CRITICAL = (
     'PIL.TiffImagePlugin'
 )
 
+
 def config_log(file: str):
     d = dirname(file)
     if d:

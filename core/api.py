@@ -15,6 +15,7 @@ from .util import clean_js_obj, clean_txt, get_obj, trim, get_text, clean_html, 
 from .wpjson import WP
 from dataclasses import dataclass, asdict, is_dataclass, field
 from urllib.parse import quote_plus
+from .img import MyImage
 
 from .filemanager import FM
 
@@ -120,7 +121,7 @@ class Lugar(NamedTuple):
 @dataclass(frozen=True, order=True)
 class Evento:
     id: int
-    img: StopAsyncIteration
+    img: str
     precio: float
     categoria: str
     lugar: Lugar
@@ -494,6 +495,7 @@ class Api:
     def find_category(self, url: str, js: Dict):
         _id = js['id']
         cat = js['id_categoria']
+        img = MyImage.get(js['image'])
 
         def _or(s: str, *args):
             b = re_or(s, *args)
@@ -518,6 +520,8 @@ class Api:
         musica = "musical / concierto"
         expomus = "exposición / museo"
         name = plain_text(js['name'] + " "+(js['sub'] or ""))
+        if img and img.isOK and img.txt:
+            name = (name + " " + (plain_text(img.txt) or "")).strip()
         info = plain_text((js['info'] or "")+" "+(js['condicion'] or ""), is_html=True)
         name_info = (name+" "+(info or "")).strip()
         recinto = plain_text(js['recinto']) or ""

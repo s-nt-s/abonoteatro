@@ -63,7 +63,7 @@ def get_trim_image(im: MyImage):
 def add_image(e: Evento):
     local = f"img/{e.id}.jpg"
     file = OUT+local
-    im = MyImage(e.img)
+    im = MyImage.get(e.img)
     if isfile(file):
         lc = MyImage(file, parent=im, background=im.background)
     else:
