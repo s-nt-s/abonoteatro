@@ -11,11 +11,12 @@ from functools import cached_property
 import base64
 import json
 from urllib.parse import quote
-from .util import clean_js_obj, clean_txt, get_obj, trim, get_text, clean_html, simplify_html, re_or, re_and, plain_text
+from .util import clean_js_obj, clean_txt, get_obj, trim, get_text, clean_html, simplify_html, re_or, re_and, plain_text, get_redirect
 from .wpjson import WP
 from dataclasses import dataclass, asdict, is_dataclass, field
 from urllib.parse import quote_plus
 from .img import MyImage
+
 
 from .filemanager import FM
 
@@ -163,9 +164,13 @@ class Evento:
             return "https://autocines.com/cartelera-cine-madrid/"
         if self.categoria is None:
             return None
+        txt = quote_plus(self.txt)
         if self.categoria == "cine":
-            return "https://www.filmaffinity.com/es/search.php?stype%5B%5D=title&stext="+quote_plus(self.txt)
-        return "https://www.atrapalo.com/busqueda/?pg=buscar&producto=ESP&keyword="+quote_plus(self.txt)
+            url = get_redirect("https://www.filmaffinity.com/es/search.php?stype%5B%5D=title&stext="+txt)
+            if url and re.match(r"https://www.filmaffinity.com/es/film\d+.html", url):
+                return url
+            return "https://www.google.es/search?&complete=0&gbv=1&q="+txt
+        return "https://www.atrapalo.com/busqueda/?pg=buscar&producto=ESP&keyword="+txt
 
     @property
     def html(self) -> Tag:

@@ -299,3 +299,8 @@ def re_and(s: str, *args: Union[str, Tuple[str]]):
         else:
             return None
     return " AND ".join(arr)
+
+
+def get_redirect(url: str):
+    r = requests.get(url, allow_redirects=False)
+    return r.headers.get('Location')

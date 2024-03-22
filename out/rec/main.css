@@ -134,7 +134,7 @@ div.evento img.cartel {
   max-height: calc(min(var(--max-width), 100vw) * 9 / 16);
 }
 
-div.img span, div.img a {
+div.img > span, div.img > a {
   position: absolute;
   bottom: 0px;
   margin: 0;
@@ -143,10 +143,11 @@ div.img span, div.img a {
   color: white;
   padding: 5px;
 }
-div.img a {
+div.img span, div.img a {
+  color: white;
   text-decoration: none;
 }
-span.infantil {
+div.img > span.infantil {
   top: 0px;
   bottom: unset !important;
   font-size: 1.5em;
@@ -154,18 +155,10 @@ span.infantil {
   background-color: unset !important;
   padding: 5px;
 }
-a.zoom {
+div.img > a.zoom {
   right: 0 !important;
   left: unset !important;
 }
-a.atrapalo img {
-  height: 1.3em;
-  width: 1.3em;
-  padding: 0;
-  margin: 0;
-  vertical-align: bottom;
-}
-
 
 body.noinputdate p.fechas {
   display: none;
@@ -175,12 +168,12 @@ p.fechas {
   align-items: center;
 }
 
-p input:first-of-type {
+p.fechas input:first-of-type {
   order: 1;
   margin-right: auto;
 }
 
-p input:last-of-type {
+p.fechas input:last-of-type {
   order: 3;
   margin-left: auto;
 }
@@ -210,6 +203,7 @@ p.fechas::after {
     content: none; 
   }
 }
+
 a.logo {
   text-decoration: none;
 }
@@ -219,4 +213,20 @@ a.logo img {
   vertical-align: bottom;
   margin: 0;
   padding: 0;
+}
+a.more[href*="www.filmaffinity.com"], a.more[href*="www.atrapalo.com"], a.more[href*="www.google.es"] {
+  background-size: 1em 1em;
+  background-repeat: no-repeat;
+  color: transparent;
+  background-position: center center;
+  vertical-align: top;
+}
+a.more[href*="www.filmaffinity.com"] {
+  background-image: url("https://www.filmaffinity.com/favicon.png");
+}
+a.more[href*="www.atrapalo.com"] {
+  background-image: url("https://www.atrapalo.com/favicon.ico");
+}
+a.more[href*="www.google.es"] {
+  background-image: url("https://www.google.es/favicon.ico");
 }
