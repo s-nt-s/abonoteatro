@@ -134,7 +134,7 @@ div.evento img.cartel {
   max-height: calc(min(var(--max-width), 100vw) * 9 / 16);
 }
 
-span.categoria, a.zoom, a.atrapalo, span.infantil {
+div.img span, div.img a {
   position: absolute;
   bottom: 0px;
   margin: 0;
@@ -142,6 +142,9 @@ span.categoria, a.zoom, a.atrapalo, span.infantil {
   background-color: rgba(0, 0, 0, 0.5);
   color: white;
   padding: 5px;
+}
+div.img a {
+  text-decoration: none;
 }
 span.infantil {
   top: 0px;
@@ -152,12 +155,8 @@ span.infantil {
   padding: 5px;
 }
 a.zoom {
-  text-decoration: none;
   right: 0 !important;
-  left: unset;
-}
-a.atrapalo {
-  text-decoration: none;
+  left: unset !important;
 }
 a.atrapalo img {
   height: 1.3em;

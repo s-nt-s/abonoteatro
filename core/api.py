@@ -13,6 +13,8 @@ import json
 from urllib.parse import quote
 from .util import clean_js_obj, clean_txt, get_obj, trim, get_text, clean_html, simplify_html, re_or, re_and, plain_text
 from .wpjson import WP
+from dataclasses import dataclass, asdict, is_dataclass, field
+from urllib.parse import quote_plus
 
 from .filemanager import FM
 
@@ -39,6 +41,8 @@ class TupleCache(Cache):
     def __parse(self, obj):
         if getattr(obj, "_asdict", None) is not None:
             obj = obj._asdict()
+        if is_dataclass(obj):
+            obj = asdict(obj)
         if isinstance(obj, (list, tuple, set)):
             return tuple(map(self.__parse, obj))
         if isinstance(obj, dict):
@@ -113,20 +117,21 @@ class Lugar(NamedTuple):
         return "https://www.google.com/maps/place/" + quote(self.direccion)
 
 
-class Evento(NamedTuple):
+@dataclass(frozen=True, order=True)
+class Evento:
     id: int
-    txt: str
-    img: str
-    subtitulo: str
+    img: StopAsyncIteration
     precio: float
     categoria: str
     lugar: Lugar
     sesiones: Tuple[Sesion] = tuple()
+    txt: str = field(default_factory=clean_txt)
+    subtitulo: str = field(default_factory=clean_txt)
     creado: str = None
     publicado: str = None
 
     def merge(self, **kwargs):
-        return Evento(**{**self._asdict(), **kwargs})
+        return Evento(**{**asdict(self), **kwargs})
 
     @staticmethod
     def build(*args, **kwargs):
@@ -135,13 +140,31 @@ class Evento(NamedTuple):
         obj['sesiones'] = tuple(map(Sesion.build, obj['sesiones']))
         return Evento(**obj)
 
-    @property
+    @cached_property
     def titulo(self):
-        tit = clean_txt(self.txt)
-        sub = clean_txt(self.subtitulo)
-        if sub is None:
-            return tit
-        return tit+", "+sub
+        if self.subtitulo is None:
+            return self.txt
+        return self.txt+", "+self.subtitulo
+
+    @cached_property
+    def more(self):
+        if self.id == 1122:
+            return "https://www.cinesur.com/es/cine-mk2-cinesur-luz-del-tajo"
+        if self.id == 1178:
+            return "https://www.cinepazmadrid.es/es/cartelera"
+        if self.id == 3687:
+            return "https://lavaguadacines.es/"
+        if self.id == 722:
+            return "https://yelmocines.es/cartelera/madrid"
+        if self.id == 409:
+            return "https://www.cinesa.es/peliculas/"
+        if self.id == 2116:
+            return "https://autocines.com/cartelera-cine-madrid/"
+        if self.categoria is None:
+            return None
+        if self.categoria == "cine":
+            return "https://www.filmaffinity.com/es/search.php?stype%5B%5D=title&stext="+quote_plus(self.txt)
+        return "https://www.atrapalo.com/busqueda/?pg=buscar&producto=ESP&keyword="+quote_plus(self.txt)
 
     @property
     def html(self) -> Tag:
@@ -149,7 +172,7 @@ class Evento(NamedTuple):
         if soup:
             return BeautifulSoup(clean_html(str(soup)), "html.parser")
 
-    @property
+    @cached_property
     def fichahtml(self):
         n = self.html.select_one("#informacioneventolargo")
         if n is None:
@@ -167,7 +190,7 @@ class Evento(NamedTuple):
         n.attrs.clear()
         return str(n)
 
-    @property
+    @cached_property
     def dias_hora(self):
         dias: Dict[str, List[Sesion]] = {}
         for e in self.sesiones:
@@ -181,9 +204,9 @@ class Evento(NamedTuple):
             if dia not in dias:
                 dias[dia] = []
             dias[dia].append(e)
-        return dias.items()
+        return tuple(dias.items())
 
-    @property
+    @cached_property
     def fechas(self):
         fechas: Set[str] = set()
         for e in self.sesiones:
@@ -191,7 +214,7 @@ class Evento(NamedTuple):
                 fechas.add(e.fecha)
         return tuple(sorted(fechas))
 
-    @property
+    @cached_property
     def isInfantil(self):
         t = plain_text(self.titulo)
         if re_or(t, "para niños", "familiar"):

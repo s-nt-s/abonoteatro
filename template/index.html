@@ -6,9 +6,13 @@
   <meta content="width=device-width, initial-scale=1" name="viewport" />
   <title>Abono Teatro</title>
   <meta name="Last-Modified" content="{{now.strftime('%Y-%m-%d %H:%M')}}" />
-  <link href="{{PAGE_URL}}/rec/main.css" rel="stylesheet"/>
+  <link href="{{PAGE_URL}}/rec/main.css" rel="stylesheet" />
   <noscript>
-      <style>.needjs{display:none !important;}</style>
+    <style>
+      .needjs {
+        display: none !important;
+      }
+    </style>
   </noscript>
   <script src="{{PAGE_URL}}/rec/hacks.js" type="text/javascript"></script>
   <script src="{{PAGE_URL}}/rec/info.js" type="text/javascript"></script>
@@ -39,15 +43,16 @@
     </p>
     {% for (img, e) in eventos %}
     <div id="e{{e.id}}" class="evento {{e.categoria | simplify}}">
-      <div class="img"{%if img.background%} style="--back: rgb{{img.background}}"{%endif%}>
-        <div><img src="{{img.url}}" alt="{{e.titulo}}" class="cartel {{img.orientation}}" loading="lazy"/></div>
+      <div class="img" {%if img.background%} style="--back: rgb{{img.background}}" {%endif%}>
+        <div><img src="{{img.url}}" alt="{{e.titulo}}" class="cartel {{img.orientation}}" loading="lazy" /></div>
         {% if e.isInfantil %}<span class="infantil" title="Evento infantil/familiar">🚸</span>{%endif%}
         <span class="categoria">{{e.categoria.title()}}</span>
-        <a class="zoom" href="{{img.origin.url}}">🔍</span>
+        <a class="zoom" href="{{img.origin.url}}" title="Ver cartel original">🔍</a>
       </div>
       <div class="info">
         <p class="titulo">
-          {% if e.precio>0 %}<span title="{{e.precio|twoDec}}€ -> {{precio.abonado|twoDec}}€" class="descuento">{{e.precio | round | int}}€</span>
+          {% if e.precio>0 %}<span title="{{e.precio|twoDec}}€ -> {{precio.abonado|twoDec}}€"
+            class="descuento">{{e.precio | round | int}}€</span>
           {% else %}<span title="¿?€ -> {{precio.abonado|twoDec}}€" class="descuento">¿?€</span>
           {% endif %}
           <a href="{{PAGE_URL}}/e/{{e.id}}">{{e.titulo}}</a>
