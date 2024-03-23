@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
 from core.api import Api, Evento
-from core.j2 import Jnj2
+from core.j2 import Jnj2, toTag
 from datetime import datetime, timedelta
 from core.log import config_log
 from core.rss import EventosRss
 from core.img import MyImage
-from core.util import dict_add, safe_get_list_dict, safe_get_dict
+from core.util import dict_add, safe_get_list_dict, safe_get_dict, get_domain
 import logging
 from os import environ
 from os.path import isfile
@@ -14,6 +14,8 @@ from typing import Dict, Set, Tuple
 from statistics import multimode
 from core.filemanager import FM
 import math
+import bs4
+import re
 
 
 import argparse
@@ -152,7 +154,39 @@ logger.info("Creando web")
 
 FM.dump("out/fechas.json", fechas)
 
-j = Jnj2("template/", OUT, favicon="🎭")
+
+def set_icons(html: str, **kwargs):
+    a: bs4.Tag
+    soup = bs4.BeautifulSoup(html, 'html.parser')
+    for a in soup.findAll("a", string=re.compile(r"\s*🔗\s*")):
+        txt = a.get_text().strip()
+        href = a.attrs["href"]
+        dom = get_domain(href)
+        dom = dom.rsplit(".", 1)[0]
+        ico = {
+            "autocines": "https://autocines.com/wp-content/uploads/2021/01/cropped-favicon-32x32-1-32x32.png",
+            "filmaffinity": "https://www.filmaffinity.com/favicon.png",
+            "atrapalo": "https://www.atrapalo.com/favicon.ico",
+            "google": "https://www.google.es/favicon.ico",
+            "cinesa": "https://www.cinesa.es/scripts/dist/favicon/es/favicon.ico",
+            "yelmocines": "https://eu-static.yelmocines.es/img/favicon.ico",
+            "lavaguadacines": "https://lavaguadacines.es/assets/images/favicon.jpg"
+        }.get(dom)
+        if ico is None:
+            continue
+        a.string = ""
+        a.append(toTag(f'<img src="{ico}" class="ico" alt="{txt}"/>'))
+        tit = {
+            "filmaffinity": "Ver en Filmaffinity",
+            "atrapalo": "Buscar en Atrapalo",
+            "google": "Buscar en Google",
+        }.get(dom)
+        if tit and not a.attrs.get("title"):
+            a.attrs["title"] = tit
+    return str(soup)
+
+
+j = Jnj2("template/", OUT, favicon="🎭", post=set_icons)
 j.create_script(
     "rec/info.js",
     EVENTOS=set((e.id for e in eventos)),

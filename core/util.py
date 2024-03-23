@@ -6,6 +6,7 @@ import unicodedata
 import requests
 import logging
 from unidecode import unidecode
+from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,14 @@ tag_right = ('p',)
 heads = ("h1", "h2", "h3", "h4", "h5", "h6")
 block = heads + ("p", "div", "table", "article")
 inline = ("span", "strong", "i", "em", "u", "b", "del")
+
+
+def get_domain(url):
+    parsed_url = urlparse(url)
+    domain: str = parsed_url.netloc.lower()
+    if domain.startswith("www."):
+        domain = domain[4:]
+    return domain
 
 
 def clean_html(html: str):

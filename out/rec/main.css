@@ -214,19 +214,10 @@ a.logo img {
   margin: 0;
   padding: 0;
 }
-a.more[href*="www.filmaffinity.com"], a.more[href*="www.atrapalo.com"], a.more[href*="www.google.es"] {
-  background-size: 1em 1em;
-  background-repeat: no-repeat;
-  color: transparent;
-  background-position: center center;
+a img.ico:not(.loaderror) {
+  max-height: 1em;
+  display: inline-block;
   vertical-align: top;
-}
-a.more[href*="www.filmaffinity.com"] {
-  background-image: url("https://www.filmaffinity.com/favicon.png");
-}
-a.more[href*="www.atrapalo.com"] {
-  background-image: url("https://www.atrapalo.com/favicon.ico");
-}
-a.more[href*="www.google.es"] {
-  background-image: url("https://www.google.es/favicon.ico");
+  margin: 0;
+  padding: 0;
 }
