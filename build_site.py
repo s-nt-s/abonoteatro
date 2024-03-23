@@ -30,6 +30,26 @@ logger = logging.getLogger(__name__)
 now = datetime.now()
 too_old = (now - timedelta(days=3)).strftime("%Y-%m-%d 00:00")
 white = (255, 255, 255)
+fechas_url = environ['PAGE_URL']+'/fechas.json'
+evento_url = environ['PAGE_URL']+'/eventos.json'
+
+
+def safe_get_fechas():
+    fechas: Dict[int, Dict[str, str]] = {}
+    for k, v in safe_get_dict(fechas_url).items():
+        k = int(k)
+        if v['visto'] < too_old:
+            fechas[int(k)] = v
+    for e in safe_get_list_dict(evento_url):
+        f = e.get('publicado')
+        if not isinstance(f, str) or len(f) == 0:
+            continue
+        if e['id'] not in fechas:
+            fechas[e['id']] = dict(publicado=f, visto=now.strftime("%Y-%m-%d %H:%M"))
+            continue
+        if f < fechas[e['id']]['publicado']:
+            fechas[e['id']]['publicado'] = f
+    return fechas
 
 
 def distance_to_white(*color) -> Tuple[int]:
@@ -83,20 +103,12 @@ def add_image(e: Evento):
 
 
 logger.info("Recuperar fechas de publicación")
-fechas = {}
-for k, f in safe_get_dict(environ['PAGE_URL']+'/fechas.json').items():
-    if f >= too_old:
-        fechas[int(k)] = f
-for e in safe_get_list_dict(environ['PAGE_URL']+'/eventos.json'):
-    f = e.get('publicado')
-    if not isinstance(f, str) or len(f) == 0:
-        continue
-    if e['id'] not in fechas or f < fechas[e['id']]:
-        fechas[e['id']] = f
+fechas = safe_get_fechas()
 logger.info("Fechas recuperadas: "+str(fechas))
+publish = {k: v['publicado'] for k, v in fechas.items()}
 
 logger.info("Recuperar eventos")
-eventos = list(Api(publish=fechas).get_events())
+eventos = list(Api(publish=publish).get_events())
 logger.info(f"{len(eventos)} recuperados")
 categorias = {}
 sesiones: Dict[str, Set[int]] = {}
@@ -104,7 +116,7 @@ sin_sesiones: Set[int] = set()
 cine_precio = []
 
 for e in eventos:
-    fechas[e.id] = e.publicado
+    fechas[e.id] = dict(publicado=e.publicado, visto=now.strftime("%Y-%m-%d %H:%M"))
     categorias[e.categoria] = categorias.get(e.categoria, 0) + 1
     if e.categoria == "cine":
         if e.precio > 0:
@@ -122,7 +134,6 @@ if len(cine_precio) > 0:
         if e.categoria == "cine" and e.precio == 0:
             logger.info(f"{e.id} ({e.categoria}) precio 0 -> {p}")
             eventos[i] = e.merge(precio=p)
-
 
 precio = dict(
     abonado=3.50,
