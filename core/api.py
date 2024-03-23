@@ -201,6 +201,10 @@ class Evento:
         dias: Dict[str, List[Sesion]] = {}
         for e in self.sesiones:
             dia = 'Cualquier día'
+            if re.search(r"V[áa]lid[oa]s?.*?de lunes a jueves", self.fichahtml, flags=re.IGNORECASE):
+                dia = "L-J"
+            if re.search(r"V[áa]lid[oa]s?.*?lunes, martes y jueves", self.fichahtml, flags=re.IGNORECASE):
+                dia = "L,M,J"
             if e.fecha is not None:
                 dh = e.fecha.split(" ")
                 if len(dh[0]) == 10:
