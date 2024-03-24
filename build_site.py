@@ -10,7 +10,7 @@ from core.util import dict_add, safe_get_list_dict, safe_get_dict, get_domain
 import logging
 from os import environ
 from os.path import isfile
-from typing import Dict, Set, Tuple
+from typing import Dict, Set, Tuple, List
 from statistics import multimode
 from core.filemanager import FM
 import math
@@ -106,7 +106,7 @@ def add_image(e: Evento):
 
 logger.info("Recuperar fechas de publicación")
 fechas = safe_get_fechas()
-logger.info("Fechas recuperadas: "+str(fechas))
+logger.info(f"{len(fechas)} fechas recuperadas")
 publish = {k: v['publicado'] for k, v in fechas.items()}
 
 logger.info("Recuperar eventos")
@@ -142,11 +142,26 @@ precio = dict(
     compa=3.50 + 5
 )
 
-eventos = sorted(
-    eventos,
-    key=lambda e: (e.publicado, e.creado or e.publicado, e.precio, len(e.sesiones), e.txt, e.id),
-    reverse=True
-)
+
+def mysorted(eventos: List[Evento]):
+    def get_key(e: Evento):
+        return (e.titulo.lower(), e.lugar.direccion.strip().split()[-1])
+    arr1 = sorted(
+        eventos,
+        key=lambda e: (e.publicado, e.creado or e.publicado, e.precio, len(e.sesiones), e.txt, e.id)
+    )
+    arr2 = []
+    for i1, e1 in enumerate(arr1):
+        if e1 in arr2:
+            continue
+        arr2.append(e1)
+        for e2 in arr1[i1+1:]:
+            if get_key(e1) == get_key(e2):
+                arr2.append(e2)
+    return tuple(reversed(arr2))
+
+
+eventos = mysorted(eventos)
 
 logger.info("Añadiendo imágenes")
 img_eventos = tuple(map(add_image, eventos))
