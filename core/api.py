@@ -633,7 +633,8 @@ class Api:
             return "otros"
         if _or(
             info,
-            "cabaret"
+            "cabaret",
+            "drags?"
         ):
             return cabadrag
         if _or(info, "tematica erotica") and cat == 19:
