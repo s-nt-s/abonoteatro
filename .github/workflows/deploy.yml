@@ -73,3 +73,7 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v2
+      - name: Web Archive
+        run: |
+          ./tool/archive.sh "$PAGE_URL/"
+          ls out/e/*.html | sed 's/[^0-9]//g' | sort -n | xargs -I{} ./tool/archive.sh "${PAGE_URL}/e/{}"
