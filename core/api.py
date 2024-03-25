@@ -144,9 +144,12 @@ class Evento:
 
     @cached_property
     def titulo(self):
+        txt = re.sub(r"\s+en platea\b", "", self.txt, flags=re.IGNORECASE)
+        if txt == txt.upper():
+            txt = txt.title()
         if self.subtitulo is None:
-            return self.txt
-        return self.txt+", "+self.subtitulo
+            return txt
+        return txt+", "+self.subtitulo
 
     @cached_property
     def more(self):
