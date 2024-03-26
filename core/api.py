@@ -145,6 +145,7 @@ class Evento:
     @cached_property
     def titulo(self):
         txt = re.sub(r"\s+en platea\b", "", self.txt, flags=re.IGNORECASE)
+        txt = re.sub(r"[\s\-]+en Callao([\s\(]*Madrid Centro[\s\)]*)?$", "", txt, flags=re.IGNORECASE)
         if txt == txt.upper():
             txt = txt.title()
         if self.subtitulo is None:
