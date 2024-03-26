@@ -40,7 +40,7 @@ def safe_get_fechas():
     fechas: Dict[int, Dict[str, str]] = {}
     for k, v in safe_get_dict(fechas_url).items():
         k = int(k)
-        if v['visto'] < too_old:
+        if v['visto'] >= too_old:
             fechas[int(k)] = v
     for e in safe_get_list_dict(evento_url):
         f = e.get('publicado')
