@@ -30,7 +30,7 @@ OUT = "out/"
 config_log("log/build_site.log")
 logger = logging.getLogger(__name__)
 now = datetime.now()
-too_old = (now - timedelta(days=3)).strftime("%Y-%m-%d 00:00")
+too_old = (now - timedelta(days=7)).strftime("%Y-%m-%d 00:00")
 white = (255, 255, 255)
 fechas_url = environ['PAGE_URL']+'/fechas.json'
 evento_url = environ['PAGE_URL']+'/eventos.json'
