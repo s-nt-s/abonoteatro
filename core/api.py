@@ -237,7 +237,6 @@ class Evento:
             i, 
             "los mas pequeños",
             "publico infantil",
-            "para toda la familia",
             "espectaculo recomendado para niños",
             "a partir de 3 años",
             "la niñez que llevamos dentro",
