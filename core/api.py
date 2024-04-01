@@ -543,7 +543,11 @@ class Api:
         recinto = plain_text(js['recinto']) or ""
         if recinto == "wizink center baloncesto":
             return "otros"
-        if _or(name+" "+recinto, "autocine", "cinesa", "cinesur", "yelmo", "mk2"):
+        if _or(name+" "+recinto, "autocine", "cinesa", "cinesur", "yelmo"):
+            return "cine"
+        if _and(name+" "+recinto, "mk2", ("sesion", "director")):
+            return "cine"
+        if ("eventos" not in recinto) and _or(name+" "+recinto, "mk2"):
             return "cine"
         if _or(name, "cines"):
             return "cine"
