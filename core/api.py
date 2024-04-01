@@ -629,8 +629,6 @@ class Api:
             # importante que vaya al final
             # porque a veces hace magia u otras cosas
             return humor
-            # importante que vaya al final
-            # porque a veces hace monologos u otras cosas
         if recinto == "sala houdini":
             return "magia"
         if _or(info, "esta obra puede herir la sensibilidad del espectador"):
