@@ -235,7 +235,7 @@ class Evento:
     @cached_property
     def isInfantil(self):
         t = plain_text(self.titulo)
-        if re_or(t, "para niños", "familiar"):
+        if re_or(t, "para niños", "familiar", "infantil"):
             return True
         i = plain_text(self.fichahtml, is_html=True)
         if re_or(
