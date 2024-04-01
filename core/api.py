@@ -648,7 +648,7 @@ class Api:
             "drags?"
         ):
             return cabadrag
-        if _or(info, "tematica erotica") and cat == 19:
+        if cat == 19 and _or(info, "tematica erotica"):
             return cabadrag
         categoria = {
             11: "teatro",
