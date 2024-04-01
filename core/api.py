@@ -127,10 +127,14 @@ class Evento:
     categoria: str
     lugar: Lugar
     sesiones: Tuple[Sesion] = tuple()
-    txt: str = field(default_factory=clean_txt)
-    subtitulo: str = field(default_factory=clean_txt)
+    txt: str = None
+    subtitulo: str = None
     creado: str = None
     publicado: str = None
+
+    def __post_init__(self):
+        object.__setattr__(self, 'txt', clean_txt(self.txt))
+        object.__setattr__(self, 'subtitulo', clean_txt(self.subtitulo))
 
     def merge(self, **kwargs):
         return Evento(**{**asdict(self), **kwargs})
