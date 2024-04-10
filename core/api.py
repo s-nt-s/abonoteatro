@@ -13,7 +13,7 @@ import json
 from urllib.parse import quote
 from .util import clean_js_obj, clean_txt, get_obj, trim, get_text, clean_html, simplify_html, re_or, re_and, plain_text, get_redirect
 from .wpjson import WP
-from dataclasses import dataclass, asdict, is_dataclass, field
+from dataclasses import dataclass, asdict, is_dataclass
 from urllib.parse import quote_plus
 from .img import MyImage
 
@@ -315,6 +315,7 @@ class Api:
     def __init__(self, publish=None):
         self.__w = None
         self.__base64: Dict[str, str] = {}
+        self.__types = None
         self.publish: Dict[int, str] = publish or {}
 
     def get(self, url, *args, label_log=None, **kwargs):
@@ -326,6 +327,28 @@ class Api:
             logger.info(f"{log} POST {url}".strip())
         else:
             logger.info(f"{log} GET {url}".strip())
+        self.__find_types()
+
+    def __find_types(self):
+        options = self.w.soup.select("#select_type_event option")
+        if len(options) == 0:
+            return
+        typs = {}
+        for o in options:
+            val = o.attrs["value"].strip()
+            txt = plain_text(o)
+            if val.isdigit() and txt is not None:
+                typs[int(val)] = txt.lower()
+        if len(typs) == 0:
+            return
+        FM.dump("rec/types.json", typs)
+        self.__types = typs
+
+    @property
+    def types(self):
+        if self.__types is None:
+            self.__find_types()
+        return self.__types
 
     @property
     def w(self):
@@ -533,7 +556,7 @@ class Api:
 
         cabadrag = "cabaret / drag"
         humor = "humor / impro"
-        musica = "musical / concierto"
+        musica = "musica / danza"
         expomus = "exposición / museo"
         name = plain_text(js['name'] + " "+(js['sub'] or ""))
         if img and img.isOK and img.txt:
@@ -649,16 +672,18 @@ class Api:
         if cat == 19 and _or(info, "tematica erotica"):
             return cabadrag
         categoria = {
-            11: "teatro",
-            15: "magia",
-            17: "otros",
-            19: musica,
-            20: "otros",
-            21: "cine",
+            11: "teatro", # teatro / teatro musical
+            15: "magia", # magia
+            17: "otros", # circo / cabaret
+            18: "otros", # conferencia
+            19: musica, # musica
+            20: "otros", # deporte
+            21: "cine", # cine
+            23: humor, # monologo
+            24: expomus, # parque tematico / exposicion
+            28: musica, # danza
             22: musica,
-            23: humor,
-            24: expomus,
-            25: "otros"
+            25: "otros",
         }.get(cat)
         if categoria is not None:
             logger.debug(f"{_id} categoria={cat} -> "+categoria)
