@@ -586,7 +586,7 @@ class Api:
             return humor
         if _or(name, "flamenco", "saeta flamenca"):
             return "flamenco"
-        if _or(name, "cabaret", "drag", "hole"):
+        if _or(name, "cabaret", "drag", "hole", "burlesque"):
             return cabadrag
         if _or(name, "bingo", "karaoke", "circo", "parque de atracciones"):
             return "otros"
