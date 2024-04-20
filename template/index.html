@@ -48,6 +48,7 @@
         {% if e.isInfantil %}<span class="infantil" title="Evento infantil/familiar">🚸</span>{%endif%}
         <span class="categoria">{% if e.more %}<a class="more" href="{{e.more}}">🔗</a> {% endif %}{{e.categoria.title()}}</span>
         <a class="zoom" href="{{img.origin.url}}" title="Ver cartel original">🔍</a>
+        <a class="lugar" href="{{e.lugar.url}}">{{e.lugar.txt}}</a>
       </div>
       <div class="info">
         <p class="titulo">
@@ -57,7 +58,6 @@
           {% endif %}
           <a href="{{PAGE_URL}}/e/{{e.id}}">{{e.titulo}}</a>
         </p>
-        <p class="lugar"><a href="{{e.lugar.url}}">{{e.lugar.txt}}</a></p>
       </div>
     </div>
     {% endfor %}

@@ -41,6 +41,7 @@
         <a class="more" href="{{e.more}}">🔗</a>
         {% endif %}
         <a class="zoom" href="{{img.origin.url}}" title="Ver cartel original">🔍</a>
+        <a class="lugar" href="{{e.lugar.url}}">{{e.lugar.txt}}</a>
       </div>
       <div class="info">
         <p class="titulo">
@@ -51,7 +52,6 @@
           <strong>{{e.titulo}}</strong><br />
           <span>{{precio.abonado|twoDec}}€</span> abonado, {{compa|twoDec}}€ acompañante
         </p>
-        <p class="lugar"><a href="{{e.lugar.url}}">{{e.lugar.txt}}</a></p>
       </div>
       {% if e.sesiones %}
       <ol class="sesiones">

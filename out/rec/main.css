@@ -60,22 +60,15 @@ a.rss:before {
   padding-left: 1.4em;
   content:"";
 }
-p.lugar {
-  text-align: right;
-}
 span.descuento {
   text-decoration: line-through;
 }
-p.lugar:before {
-  content: "📍"
-}
 div.info  {
-  display: grid;
-  grid-template-columns: auto 1fr;
+  /*! display: grid; */
+  /*! grid-template-columns: auto 1fr; */
   margin-top: 5px;
   margin-bottom: 10px;
 }
-
 
 nav ul {
   list-style-type: none;
@@ -98,7 +91,7 @@ nav ul li+li:before {
 nav ul li code {
   font-size: inherit;
 }
-#categoria {
+#categoria, #lugar, #filtro {
   width: 100%;
 }
 ol.sesiones {
@@ -148,13 +141,24 @@ div.img span, div.img a {
   color: white;
   text-decoration: none;
 }
+
+div.img > a.lugar {
+  top: 0px;
+  bottom: unset !important;
+}
+a.lugar:before {
+  content: "📍"
+}
+
 div.img > span.infantil {
   top: 0px;
+  right: 0px;
   bottom: unset !important;
   font-size: 1.5em;
   cursor: help;
   background-color: unset !important;
   padding: 5px;
+  left: unset;
 }
 div.img > a.zoom {
   right: 0 !important;
