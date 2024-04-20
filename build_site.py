@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 
-from core.api import Api, Evento
+from core.api import Api, Evento, Sesion
 from core.j2 import Jnj2, toTag
 from datetime import datetime, timedelta
 from core.log import config_log
 from core.rss import EventosRss
 from core.img import MyImage
-from core.util import dict_add, safe_get_list_dict, safe_get_dict, get_domain
+from core.util import dict_add, safe_get_list_dict, safe_get_dict, get_domain, to_datetime
 import logging
 from os import environ
 from os.path import isfile
 from typing import Dict, Set, Tuple, List
 from statistics import multimode
 from core.filemanager import FM
+from core.ics import IcsEvent
 import math
 import bs4
 import re
@@ -137,6 +138,30 @@ if len(cine_precio) > 0:
             logger.info(f"{e.id} ({e.categoria}) precio 0 -> {p}")
             eventos[i] = e.merge(precio=p)
 
+
+def event_to_ics(e: Evento, s: Sesion):
+    if s.fecha is None:
+        return None
+    url = f"{PAGE_URL}/e/{e.id}"
+    description = "\n".join(filter(lambda x: x is not None, [
+        f'{e.precio}€', url, s.url, e.more
+    ])).strip()
+    dtstart = to_datetime(s.fecha)
+    dtend = dtstart + timedelta(minutes=60)
+    return IcsEvent(
+        uid=f"{e.id}_{s.id}",
+        dtstamp=now,
+        url=(s.url or url),
+        categories=e.categoria,
+        summary=e.titulo,
+        description=description,
+        location=e.lugar.direccion,
+        organizer=e.lugar.txt,
+        dtstart=dtstart,
+        dtend=dtend
+    )
+
+
 precio = dict(
     abonado=3.50,
     compa=3.50 + 5
@@ -161,7 +186,17 @@ def mysorted(eventos: List[Evento]):
     return tuple(reversed(arr2))
 
 
-eventos = mysorted(eventos)
+eventos: Tuple[Evento] = mysorted(eventos)
+
+logger.info("Añadiendo ics")
+icsevents = []
+for e in eventos:
+    for s in e.sesiones:
+        ics = event_to_ics(e, s)
+        if ics is not None:
+            ics.dumpme(f"out/cal/{e.id}_{s.id}.ics")
+            icsevents.append(ics)
+IcsEvent.dump("out/eventos.ics", *icsevents)
 
 logger.info("Añadiendo imágenes")
 img_eventos = tuple(map(add_image, eventos))

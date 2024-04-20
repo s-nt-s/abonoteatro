@@ -205,7 +205,7 @@ p.fechas::after {
   }
 }
 
-a.logo {
+a.logo, a.ico {
   text-decoration: none;
 }
 a.logo img {

@@ -1,5 +1,21 @@
 <header>
-    <p>
-        <a class="logo" href="{{PAGE_URL}}/abonoteatro.rss" title="Suscríbete para recibir las novedades"><img src="rec/img/rss.svg" alt="RSS"/></a> | <a class="logo" href="{{REPO_URL}}" title="Código fuente"><img src="rec/img/github.svg" alt="GitHub"/></a> | {{count}} eventos a {{precio.abonado|twoDec}}€ con <a href="https://www.abonoteatro.com/">Abono Teatro</a> 
-    </p>
+  <p>
+    <a
+      class="logo"
+      href="{{PAGE_URL}}/abonoteatro.rss"
+      title="Suscríbete para recibir las novedades"
+      ><img src="rec/img/rss.svg" alt="RSS"
+    /></a>
+    | <a
+      class="ico"
+      href="{{PAGE_URL}}/eventos.ics"
+      title="Calendario de eventos"
+      >🗓</a>
+    |
+    <a class="logo" href="{{REPO_URL}}" title="Código fuente"
+      ><img src="rec/img/github.svg" alt="GitHub"
+    /></a>
+    | {{count}} eventos a {{precio.abonado|twoDec}}€ con
+    <a href="https://www.abonoteatro.com/">Abono Teatro</a>
+  </p>
 </header>

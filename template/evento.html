@@ -58,7 +58,10 @@
         {% for dia, sesiones in e.dias_hora %}
         <li>
           <pre>{{dia.strip()}}</pre>:{% for s in sesiones %}
-          <a href="{{s.url}}">{{(s.hora or "comprar")}}</a>{%endfor%}
+          <a href="{{s.url}}">{{(s.hora or "comprar")}}</a>
+          {% if s.fecha %}
+          <a href="{{PAGE_URL}}/cal/{{e.id}}_{{s.id}}.ics" title="Añade a tu calendario" class="ico">🗓</a>{% endif %}
+          {%endfor%}
         </li>
         {% endfor %}
       </ol>

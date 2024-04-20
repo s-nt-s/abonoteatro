@@ -76,7 +76,8 @@ class FileManager:
             "xlsx": "xls",
             "js": "json",
             "sql": "txt",
-            "htm": "html"
+            "htm": "html",
+            "ics": "txt"
         }.get(ext, ext)
 
     def load(self, file, *args, **kargv):
