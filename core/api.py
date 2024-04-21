@@ -107,7 +107,14 @@ class Lugar(NamedTuple):
         dire = js['direccion']
         muni = js['municipio']
         txt = clean_txt(js['recinto'])
-        txt = re.sub(r"\s*\(eventos\)\s*$", "", txt, flags=re.IGNORECASE)
+        txt = re.sub(r"\s*\(?eventos\)?\s*$", "", txt, flags=re.IGNORECASE)
+        txt = re.sub(r"\s*Madrid\s*$", "", txt, flags=re.IGNORECASE)
+        txt = re.sub(r"^\s*\bCines\b\s+", "", txt, flags=re.IGNORECASE)
+        words = txt.lower().split()
+        if len({"mk2", "palacio", "hielo"}.difference(words))==0:
+            txt = "Mk2 Palacio de Hielo"
+        if len({"teatro", "príncipe", "pío"}.difference(words))==0:
+            txt = "Teatro Príncipe Pío"
         return Lugar(
             txt=txt,
             direccion=trim((dire or "") + ' ' + (muni or ""))

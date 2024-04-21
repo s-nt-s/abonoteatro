@@ -121,8 +121,8 @@ cine_precio = []
 
 for e in eventos:
     fechas[e.id] = dict(publicado=e.publicado, visto=now.strftime("%Y-%m-%d %H:%M"))
-    categorias[e.categoria] = categorias.get(e.categoria, 0) + 1
-    lugares[e.lugar.txt] = lugares.get(e.lugar.txt, 0) + 1
+    categorias[e.categoria.lower()] = categorias.get(e.categoria.lower(), 0) + 1
+    lugares[e.lugar.txt.lower()] = lugares.get(e.lugar.txt.lower(), 0) + 1
     if e.categoria == "cine":
         if e.precio > 0:
             cine_precio.append(e.precio)
