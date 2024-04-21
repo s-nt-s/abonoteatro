@@ -114,6 +114,7 @@ logger.info("Recuperar eventos")
 eventos = list(Api(publish=publish).get_events())
 logger.info(f"{len(eventos)} recuperados")
 categorias = {}
+lugares = {}
 sesiones: Dict[str, Set[int]] = {}
 sin_sesiones: Set[int] = set()
 cine_precio = []
@@ -121,6 +122,7 @@ cine_precio = []
 for e in eventos:
     fechas[e.id] = dict(publicado=e.publicado, visto=now.strftime("%Y-%m-%d %H:%M"))
     categorias[e.categoria] = categorias.get(e.categoria, 0) + 1
+    lugares[e.lugar.txt] = lugares.get(e.lugar.txt, 0) + 1
     if e.categoria == "cine":
         if e.precio > 0:
             cine_precio.append(e.precio)
@@ -250,6 +252,7 @@ j.save(
     precio=precio,
     now=now,
     categorias=categorias,
+    lugares=lugares,
     count=len(eventos),
     fecha=dict(
         ini=min(sesiones.keys()),

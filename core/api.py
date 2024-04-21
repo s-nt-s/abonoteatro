@@ -106,9 +106,10 @@ class Lugar(NamedTuple):
     def create(js: Dict):
         dire = js['direccion']
         muni = js['municipio']
-
+        txt = clean_txt(js['recinto'])
+        txt = re.sub(r"\s*\(eventos\)\s*$", "", txt, flags=re.IGNORECASE)
         return Lugar(
-            txt=clean_txt(js['recinto']),
+            txt=txt,
             direccion=trim((dire or "") + ' ' + (muni or ""))
         )
 

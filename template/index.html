@@ -29,20 +29,27 @@
       <input type="date" id="fin" value="{{fecha.fin}}" min="{{fecha.ini}}" max="{{fecha.fin}}" title="Fecha de fin">
     </p>
     <p class="categoria needjs">
-      <select id="categoria">
+      <select id="filtro">
         <option value="">Todos ({{count}})</option>
-        {% for c, num in categorias.items()|sort %}
-        {% if c != "otros"%}
-        <option value="{{c | simplify }}" data-txt="{{c.title()}}">{{c.title()}} ({{num}})</option>
-        {% endif %}
-        {% endfor %}
-        {% if "otros" in categorias %}
-        <option value="otros" data-txt="Otros">Otros ({{categorias['otros']}})</option>
-        {% endif %}
+        <optgroup label="Categoría">
+          {% for c, num in categorias.items()|sort %}
+          {% if c != "otros"%}
+          <option value="{{c | simplify }}" data-txt="{{c.title()}}">{{c.title()}} ({{num}})</option>
+          {% endif %}
+          {% endfor %}
+          {% if "otros" in categorias %}
+          <option value="otros" data-txt="Otros">Otros ({{categorias['otros']}})</option>
+          {% endif %}
+        </optgroup>
+        <optgroup label="Lugar">
+          {% for c, num in lugares.items()|sort %}
+          <option value="{{c | simplify }}" data-txt="{{(c|string).title()}}">{{(c|string).title()}} ({{num}})</option>
+          {% endfor %}
+        </optgroup>
       </select>
     </p>
     {% for (img, e) in eventos %}
-    <div id="e{{e.id}}" class="evento {{e.categoria | simplify}}">
+    <div id="e{{e.id}}" class="evento {{e.categoria | simplify}} {{e.lugar.txt | simplify }}">
       <div class="img" {%if img.background%} style="--back: rgb{{img.background}}" {%endif%}>
         <div><img src="{{img.url}}" alt="{{e.titulo}}" class="cartel {{img.orientation}}" loading="lazy" /></div>
         {% if e.isInfantil %}<span class="infantil" title="Evento infantil/familiar">🚸</span>{%endif%}

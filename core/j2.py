@@ -50,12 +50,15 @@ class CustomEncoder(json.JSONEncoder):
 
 def simplify(s: str):
     s = s.replace("/", " ")
-    s = re_sp.sub(" ", s).strip().lower()
-    s = unidecode(s)
+    s = unidecode(s).lower()
+    s = re.sub(r"[^\s\da-z_\-]", "", s)
+    s = re.sub(r"^(\d+)", r"n\1", s)
+    s = re_sp.sub(" ", s).strip()
     spl = s.rsplit(",", 1)
     if len(spl) == 2 and spl[1].strip() in ('el', 'la', 'los', 'las'):
         s = spl[0].strip()
     s = re_sp.sub("-", s)
+    s = re.sub(r"--+", "-", s)
     return s
 
 
