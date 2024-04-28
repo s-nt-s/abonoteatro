@@ -180,7 +180,9 @@ class Evento:
             return "https://autocines.com/cartelera-cine-madrid/"
         if self.categoria is None:
             return None
-        txt = quote_plus(self.txt)
+        txt = re.sub(r"^\s*sesión exclusiva?:\s*|[\.,\s]*con la intervención de.*$|\s*\(?V\.?O\.?S\.?E\.?\)?\s*$", "",self.txt, flags=re.IGNORECASE)
+        txt = txt.strip(". ")
+        txt = quote_plus(txt)
         if self.categoria == "cine":
             url = get_redirect("https://www.filmaffinity.com/es/search.php?stype%5B%5D=title&stext="+txt)
             if url and re.match(r"https://www.filmaffinity.com/es/film\d+.html", url):
