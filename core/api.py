@@ -319,7 +319,7 @@ class Api:
     CATALOG = (
         "https://compras.abonoteatro.com/teatro/",
         "https://compras.abonoteatro.com/cine-y-eventos/",
-        "https://www.abonoteatro.com/catalogo/cine_peliculas.php",
+        #"https://www.abonoteatro.com/catalogo/cine_peliculas.php",
     )
 
     def __init__(self, publish=None):
