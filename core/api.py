@@ -590,19 +590,21 @@ class Api:
             return expomus
         if path == "cine-y-eventos":
             return "otros"
+        if _or(name, "cabaret", "drag", "hole", "burlesque") or _and(info, r"gogos?", "erotismo"):
+            return cabadrag
         if _or(name, "magic", "magia", "magos?", "mentalistas?", "hipnosis"):
             return "magia"
         if _or(name, "impro", "el humor de", "clown"):
             return humor
         if _or(name, "flamenco", "saeta flamenca"):
             return "flamenco"
-        if _or(name, "cabaret", "drag", "hole", "burlesque"):
-            return cabadrag
         if _or(name, "bingo", "karaoke", "circo", "parque de atracciones"):
             return "otros"
-        if _or(name, "b vocal", "opera", "musica en vivo", "jazz", "tributo", "sinfonico", "musical", "concierto", r"boleros?", "orquesta", "pianista"):
+        if _or(name, r"[jk]-?pop", "cocoloco", "b vocal", "opera", "musica en vivo", "jazz", "tributo", "sinfonico", "musical", "concierto", r"boleros?", "orquesta", "pianista") or _and(name, r"musical(es)?", "broadway"):
             return musica
-
+        if cat == 23 and _or(name, "humor"):
+            return humor
+    
         if _or(info, "monologo narrativo"):
             return "teatro"
         if _or(info, "mentalismo", "espectaculo de magia", "espiritismo"):
@@ -679,7 +681,7 @@ class Api:
             "drags?"
         ):
             return cabadrag
-        if cat == 19 and _or(info, "tematica erotica"):
+        if cat in (17, 19) and _or(info, "tematica erotica",  "erotismo"):
             return cabadrag
         categoria = {
             11: "teatro", # teatro / teatro musical
