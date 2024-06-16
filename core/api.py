@@ -108,7 +108,7 @@ class Lugar(NamedTuple):
         muni = js['municipio']
         txt = clean_txt(js['recinto'])
         txt = re.sub(r"\s*\(?eventos\)?\s*$", "", txt, flags=re.IGNORECASE)
-        txt = re.sub(r"\s*Madrid\s*$", "", txt, flags=re.IGNORECASE)
+        txt = re.sub(r"(\s+de)?\s+Madrid\s*$", "", txt, flags=re.IGNORECASE)
         txt = re.sub(r"^\s*\bCines\b\s+", "", txt, flags=re.IGNORECASE)
         words = txt.lower().split()
         if len({"mk2", "palacio", "hielo"}.difference(words))==0:
