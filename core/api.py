@@ -647,7 +647,8 @@ class Api:
             "viaje musical",
             "concierto",
             "percusion",
-            "banda sonora"
+            "banda sonora",
+            "cantaran sus temas"
         ):
             return musica
         if _and(name_info, "clown", "humor"):
