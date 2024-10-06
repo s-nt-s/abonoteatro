@@ -604,7 +604,7 @@ class Api:
             return musica
         if cat == 23 and _or(name, "humor"):
             return humor
-    
+
         if _or(info, "monologo narrativo"):
             return "teatro"
         if _or(info, "mentalismo", "espectaculo de magia", "espiritismo"):
@@ -698,6 +698,7 @@ class Api:
             28: musica, # danza
             22: musica,
             25: "otros",
+            30: "otros", # visitas guiadas
         }.get(cat)
         if categoria is not None:
             logger.debug(f"{_id} categoria={cat} -> "+categoria)
