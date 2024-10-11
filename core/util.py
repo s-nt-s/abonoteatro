@@ -321,5 +321,9 @@ def to_datetime(s: str):
     if s is None:
         return None
     tz = pytz.timezone('Europe/Madrid')
-    dt = datetime.strptime(s, "%Y-%m-%d %H:%M")
-    return tz.localize(dt)
+    if len(s) == 10:
+        dt = datetime.strptime(s, "%Y-%m-%d")
+    else:
+        dt = datetime.strptime(s, "%Y-%m-%d %H:%M")
+    dt = tz.localize(dt)
+    return dt
