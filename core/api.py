@@ -467,9 +467,7 @@ class Api:
         if id not in self.__base64:
             for url in Api.CATALOG:
                 list(self.get_base64_event(url))
-                if id in self.__base64:
-                    return self.__base64[id]
-        return self.__base64[id]
+        return self.__base64.get(id)
 
     def find_days(self, id: int):
         arr = []
