@@ -632,7 +632,7 @@ class Api:
 
         if _or(info, "monologo narrativo"):
             return "teatro"
-        if _or(info, "mentalismo", "espectaculo de magia", "espiritismo"):
+        if _or(info, "mentalismo", "espectaculo de magia", "espiritismo", "fito crawford"):
             return "magia"
         if _and(info, r"exposicion|expondran?", "obras"):
             return expomus
