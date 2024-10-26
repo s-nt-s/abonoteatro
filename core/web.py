@@ -339,7 +339,7 @@ class Driver:
         logger.debug(url)
         self.driver.get(url)
 
-    def get_soup(self, root=None):
+    def get_soup(self, root: str = None):
         if self._driver is None:
             return None
         if root is None:

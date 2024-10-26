@@ -16,6 +16,7 @@ from .wpjson import WP
 from dataclasses import dataclass, asdict, is_dataclass
 from urllib.parse import quote_plus
 from .img import MyImage
+from selenium.common.exceptions import TimeoutException
 
 
 from .filemanager import FM
@@ -309,13 +310,33 @@ class PortalDriver(Driver):
     def wait_ready(self):
         self.waitjs('window.document.readyState === "complete"')
 
+    @property
+    def error(self):
+        self.wait("html body", by=By.CSS_SELECTOR)
+        soup = self.get_soup()
+        if soup is None:
+            return None
+        body = soup.select_one("body")
+        if body is None:
+            return None
+        cls = body.attrs.get('class')
+        if isinstance(cls, str):
+            cls = cls.strip().split()
+        if not isinstance(cls, list):
+            return None
+        for c in cls:
+            m = re.match(r"error(\d+)", c.lower())
+            if m:
+                return int(m.group(1))
+        return None
+
 
 class Api:
     IFRAME = 'div[role="main"] iframe'
     BTNDAY = "div.bsesion a.buyBtn"
     EVENT = '#modal_event_content > div.container'
     URLDAY = 'https://compras.abonoteatro.com/compra/?eventocurrence='
-    DETAIL = 'https://www.abonoteatro.com/catalogo/detalle_evento.php'
+    DETAIL = 'https://programacion.abonoteatro.com/catalogo/detalle_evento.php'
     CATALOG = (
         "https://compras.abonoteatro.com/teatro/",
         "https://compras.abonoteatro.com/cine-y-eventos/",
@@ -449,6 +470,12 @@ class Api:
                 w.driver.switch_to.frame(iframe)
                 w.wait_ready()
                 iframe = src
+            if w.error is not None:
+                msg = f"{w.error} in {url}"
+                if w.error == 404:
+                    logger.warning(msg)
+                    return w.get_soup().select("nonexistent_tag")
+                raise ApiException(msg)
             w.wait("h2", by=By.CSS_SELECTOR)
             w.waitjs("window.show_event_modal != null")
             soup = w.get_soup(iframe)
@@ -475,10 +502,10 @@ class Api:
         for a in soup.select(Api.BTNDAY):
             href = a.attrs["href"]
             if not href.startswith(Api.URLDAY):
-                raise ApiException("URL de sesion extraña: "+href)
+                raise ApiException("URL de sesión extraña: "+href)
             _, did = href.split("=", 1)
             if not did.isdigit():
-                raise ApiException("URL de sesion extraña: "+href)
+                raise ApiException("URL de sesión extraña: "+href)
             arr.append((int(did), a))
         ses: Set[Sesion] = set()
         for did, a in arr:
