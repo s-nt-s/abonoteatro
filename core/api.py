@@ -24,7 +24,7 @@ from .filemanager import FM
 logger = logging.getLogger(__name__)
 
 re_sp = re.compile(r"\s+")
-MONTHS = ("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "dic")
+MONTHS = ("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic")
 NOW = datetime.now().strftime("%Y-%m-%d %H:%S")
 
 
