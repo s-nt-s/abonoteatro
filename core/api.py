@@ -18,6 +18,7 @@ from urllib.parse import quote_plus
 from .img import MyImage
 import random
 import time
+from core.web import Web
 
 
 from .filemanager import FM
@@ -251,7 +252,7 @@ class Evento:
             return True
         i = plain_text(self.fichahtml, is_html=True)
         if re_or(
-            i, 
+            i,
             "los mas pequeños",
             "publico infantil",
             "espectaculo recomendado para niños",
@@ -291,6 +292,7 @@ PSW = environ.get("ABONOTEATRO_PSW")
 
 class PortalDriver(Driver):
     def login(self, user: str = USER, psw: str = PSW):
+        environ['IS_ANON'] = "false"
         self.get("https://compras.abonoteatro.com/login/")
         self.val("nabonadologin", user)
         self.val("contrasenalogin", psw)
@@ -345,7 +347,7 @@ class Api:
     )
 
     def __init__(self, publish=None, human_delay=5):
-        self.__w = None
+        self._w = None
         self.__base64: Dict[str, str] = {}
         self.__types = None
         self.__human_delay = human_delay
@@ -363,9 +365,9 @@ class Api:
             logger.info(f"{log} POST {url}".strip())
         else:
             logger.info(f"{log} GET {url}".strip())
-        self.__find_types()
+        self._find_types()
 
-    def __find_types(self):
+    def _find_types(self):
         options = self.w.soup.select("#select_type_event option")
         if len(options) == 0:
             return
@@ -383,16 +385,16 @@ class Api:
     @property
     def types(self):
         if self.__types is None:
-            self.__find_types()
+            self._find_types()
         return self.__types
 
     @property
     def w(self):
-        if self.__w is None:
+        if self._w is None:
             with PortalDriver("firefox", human_delay=self.__human_delay) as w:
                 w.login()
-                self.__w = w.to_web()
-        return self.__w
+                self._w = w.to_web()
+        return self._w
 
     @cached_property
     def wp(self):
@@ -407,12 +409,14 @@ class Api:
                 if e.id not in evs or e.precio > evs[e.id].precio:
                     evs[e.id] = e.merge(
                         publicado=self.publish.get(e.id, NOW),
-                        creado=None  # self.media_date.get(e.img)
+                        creado=self.media_date.get(e.img)
                     )
         return tuple(sorted(evs.values()))
 
     @cached_property
     def media_date(self):
+        if environ['IS_ANON'] != "true":
+            return {}
         data = {}
         for m in self.wp.media:
             f = m['modified'].replace("T", " ")[:16]
@@ -445,7 +449,7 @@ class Api:
         return tuple(sorted(evs.values(), key=lambda e: e['id']))
 
     def get_base64_event(self, url: str):
-        inpt = self.__get_list_event(url)
+        inpt = self._get_list_event(url)
         for i in inpt:
             id = i.attrs.get("id")
             if id is None or not re.match(r"^event_content_json_id_\d+$", id):
@@ -458,7 +462,7 @@ class Api:
             self.__base64[data['id']] = value
             yield (data['id'], value, data)
 
-    def __get_list_event(self, url: str):
+    def _get_list_event(self, url: str):
         self.get(url)
         iframe = self.w.soup.select_one(Api.IFRAME)
         if iframe is not None:
@@ -734,3 +738,49 @@ class Api:
             return categoria
         logger.debug(f"{_id} no cumple ninguna condición")
         return "teatro"
+
+
+class AnomApi(Api):
+
+    @property
+    def w(self):
+        if self._w is None:
+            self._w = Web()
+        return self._w
+
+    def get(self, url, *args, label_log=None, headers=None, **kwargs):
+        if self.w.url == url and len(args) == 0 and len(kwargs) == 0:
+            return
+        self.w.get(url, *args, headers=headers, **kwargs)
+        log = (str(label_log)+":" if label_log is not None else "")
+        url_log = re.sub(r"token=.*", "token=", url)
+        if kwargs:
+            logger.info(f"{log} POST {url_log}".strip())
+        else:
+            logger.info(f"{log} GET {url_log}".strip())
+        self._find_types()
+
+    @TupleCache("rec/eventos.json", builder=Evento.build)
+    def get_events(self):
+        evs: Dict[int, Evento] = {}
+        url = 'https://programacion.abonoteatro.com/catalogo/teatros2.php?token='+environ['PROGRAMA_TOKEN']
+        for e in self.get_events_from(url):
+            if e.id not in evs or e.precio > evs[e.id].precio:
+                evs[e.id] = e.merge(
+                    publicado=self.publish.get(e.id, NOW),
+                    creado=None  # self.media_date.get(e.img)
+                )
+        return tuple(sorted(evs.values()))
+
+    def _get_list_event(self, url: str):
+        self.get(url, headers={
+            'Referer': 'https://compras.abonoteatro.com/',
+            'Cookie': 'unabonado=;',
+        })
+        iframe = self.w.soup.select_one(Api.IFRAME)
+        if iframe is not None:
+            self.get(iframe.attrs["src"])
+        npts = self.w.soup.select('input[type="hidden"]')
+        if len(npts) == 0:
+            raise ApiException(f"0 eventos en {url}")
+        return npts

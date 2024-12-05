@@ -16,6 +16,7 @@ env:
   MINIFY: "1"
   ABONOTEATRO_USER: ${{ secrets.ABONOTEATRO_USER }}
   ABONOTEATRO_PSW: ${{ secrets.ABONOTEATRO_PSW }}
+  PROGRAMA_TOKEN: ${{ secrets.PROGRAMA_TOKEN }}
 jobs:
   scrape_and_deploy:
     runs-on: ubuntu-latest

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from core.api import Api, Evento, Sesion
+from core.api import Api, Evento, Sesion, AnomApi
 from core.j2 import Jnj2, toTag
 from datetime import datetime, timedelta
 from core.log import config_log
@@ -17,9 +17,9 @@ from core.ics import IcsEvent
 import math
 import bs4
 import re
-
-
 import argparse
+
+environ['IS_ANON'] = "true"
 
 parser = argparse.ArgumentParser(
     description='Listar eventos de https://www.abonoteatro.com/')
@@ -111,7 +111,7 @@ logger.info(f"{len(fechas)} fechas recuperadas")
 publish = {k: v['publicado'] for k, v in fechas.items()}
 
 logger.info("Recuperar eventos")
-eventos = list(Api(publish=publish).get_events())
+eventos = list(AnomApi(publish=publish).get_events())
 logger.info(f"{len(eventos)} recuperados")
 categorias = {}
 lugares = {}

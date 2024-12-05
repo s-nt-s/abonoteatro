@@ -123,15 +123,15 @@ class Web:
         self.refer = refer
         self.verify = verify
 
-    def _get(self, url, allow_redirects=True, auth=None, **kvargs):
+    def _get(self, url, allow_redirects=True, auth=None, headers=None, **kvargs):
         if kvargs:
-            return self.s.post(url, data=kvargs, allow_redirects=allow_redirects, verify=self.verify, auth=auth)
-        return self.s.get(url, allow_redirects=allow_redirects, verify=self.verify, auth=auth)
+            return self.s.post(url, headers=headers, data=kvargs, allow_redirects=allow_redirects, verify=self.verify, auth=auth)
+        return self.s.get(url, headers=headers, allow_redirects=allow_redirects, verify=self.verify, auth=auth)
 
-    def get(self, url, auth=None, parser="lxml", **kvargs):
+    def get(self, url, auth=None, parser="lxml", headers=None, **kvargs):
         if self.refer:
             self.s.headers.update({'referer': self.refer})
-        self.response = self._get(url, auth=auth, **kvargs)
+        self.response = self._get(url, auth=auth, headers=headers, **kvargs)
         self.refer = self.response.url
         self.soup = buildSoup(url, self.response.content, parser=parser)
         return self.soup

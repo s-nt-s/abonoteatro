@@ -13,6 +13,7 @@ from requests.exceptions import RequestException, ConnectionError
 from urllib3.exceptions import NewConnectionError
 from core.cache import Cache
 from core.filemanager import FM
+from os import environ
 
 logger = logging.getLogger(__name__)
 
@@ -141,6 +142,8 @@ class MyImage:
 
     @BytesIOCache("rec/img/")
     def __get_from_url_using_webarchive(self, url: str, tries=3):
+        if environ['IS_ANON'] == "true":
+            return get_bytes(url)
         arch = None
         try:
             arch = get_webarchive(url)
