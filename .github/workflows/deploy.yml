@@ -2,7 +2,7 @@ name: deploy
 on:
   workflow_dispatch:
   schedule:
-  - cron: '0 6,9,11,13,15,18,20 * * *'
+  - cron: '0 11 * * *'
 permissions:
   contents: read
   pages: write

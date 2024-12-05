@@ -8,8 +8,35 @@ from typing import List, Tuple, NamedTuple, Union, Dict
 from functools import cached_property, cache
 from os.path import isfile
 from pytesseract import image_to_string
+import time
+from requests.exceptions import RequestException, ConnectionError
+from urllib3.exceptions import NewConnectionError
 
 logger = logging.getLogger(__name__)
+
+
+def get_webarchive(url):
+    api_url = f"https://archive.org/wayback/available?url={url}"
+    r = requests.get(api_url)
+    if r.status_code != 200:
+        return None
+    data = r.json()
+    snapshots = data['archived_snapshots']
+    if isinstance(snapshots, dict):
+        snapshot = snapshots.get('closest')
+        if isinstance(snapshot, dict) and snapshot['available']:
+            timestamp = snapshot['timestamp']
+            new_url = f"https://web.archive.org/web/{timestamp}if_/{url}"
+            return new_url
+
+    save_url = f"https://web.archive.org/save/{url}"
+    r = requests.get(save_url)
+    return None
+
+
+def get_bytes(url: str):
+    response = requests.get(url)
+    return BytesIO(response.content)
 
 
 class CornerColor(NamedTuple):
@@ -86,16 +113,37 @@ class MyImage:
         try:
             path = str(self.path)
             if not isfile(path):
-                response = requests.get(self.path)
-                path = BytesIO(response.content)
+                path = self.__get_from_url_using_webarchive(path)
             im = Image.open(path)
             im = im.convert('RGB')
             return im
-        except requests.exceptions.RequestException:
-            logger.critical("No se pudo descargar la imagen "+str(self.path), exc_info=True)
+        except (RequestException, NewConnectionError, ConnectionError):
+            logger.critical(f"No se pudo descargar la imagen {self.path}", exc_info=True)
         except UnidentifiedImageError:
-            logger.critical("La ruta no apunta a una imagen válida "+str(self.path), exc_info=True)
+            logger.critical(f"La ruta no apunta a una imagen válida {self.path}", exc_info=True)
         return None
+
+    def __get_from_url_using_webarchive(self, url: str, tries=3):
+        arch = None
+        try:
+            arch = get_webarchive(url)
+        except (RequestException, NewConnectionError, ConnectionError):
+            pass
+        if arch is None and tries > 0:
+            time.sleep(5)
+            return self.__get_from_url_using_webarchive(url, tries=tries-1)
+        if arch is not None:
+            try:
+                b = get_bytes(arch)
+                logger.debug("dwn "+arch)
+                return b
+            except (RequestException, NewConnectionError, ConnectionError):
+                if tries > 0:
+                    time.sleep(5)
+                    return self.__get_from_url_using_webarchive(url, tries=tries-1)
+        b = get_bytes(url)
+        logger.debug("dwn "+url)
+        return b
 
     def trim(self):
         count = self.get_corner_colors().get_count()

@@ -1,6 +1,7 @@
 import os
 import re
 import time
+from inspect import isfunction
 from urllib.parse import parse_qsl, urljoin, urlsplit
 
 import requests
@@ -27,6 +28,8 @@ from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.remote.webelement import WebElement
 import logging
 from typing import Union
+import random
+from functools import wraps
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +53,17 @@ default_headers = {
     'Connection': 'keep-alive',
     'Upgrade-Insecure-Requests': '1',
 }
+
+
+def mk_delay(name, min_delay=1, max_delay=3):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            delay = random.uniform(min_delay, max_delay)
+            time.sleep(delay)
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
 
 
 def get_query(url):
@@ -200,13 +214,14 @@ class Driver:
             ).install()
         return Driver.DRIVER_PATH
 
-    def __init__(self, browser=None, wait=60, useragent=None):
+    def __init__(self, browser=None, wait=60, useragent=None, human_delay=-1):
         # Driver.find_driver_path()
-        self._driver: WebDriver = None
-        self.visible = (os.environ.get("DRIVER_VISIBLE") == "1")
-        self._wait = wait
-        self.useragent = useragent
-        self.browser = browser
+        self.__driver: WebDriver = None
+        self.__visible = (os.environ.get("DRIVER_VISIBLE") == "1")
+        self.__wait = wait
+        self.__useragent = useragent
+        self.__browser = browser
+        self.__human_delay = human_delay
 
     def __enter__(self, *args, **kwargs):
         return self
@@ -216,11 +231,11 @@ class Driver:
 
     def _create_firefox(self):
         options = FFoptions()
-        options.headless = not self.visible
+        options.headless = not self.__visible
         profile = webdriver.FirefoxProfile()
-        if self.useragent:
+        if self.__useragent:
             profile.set_preference(
-                "general.useragent.override", self.useragent)
+                "general.useragent.override", self.__useragent)
         for k, v in FF_DEFAULT_PROFILE.items():
             profile.set_preference(k, v)
             profile.DEFAULT_PREFERENCES['frozen'][k] = v
@@ -233,10 +248,10 @@ class Driver:
 
     def _create_chrome(self):
         options = CMoptions()
-        if not self.visible:
+        if not self.__visible:
             options.add_argument('headless')
-        if self.useragent:
-            options.add_argument('user-agent=' + self.useragent)
+        if self.__useragent:
+            options.add_argument('user-agent=' + self.__useragent)
         options.add_argument("start-maximized")
         options.add_argument("--disable-extensions")
         options.add_argument('--disable-blink-features=AutomationControlled')
@@ -268,11 +283,11 @@ class Driver:
 
     def _create_wirefirefox(self):
         options = FFoptions()
-        options.headless = not self.visible
+        options.headless = not self.__visible
         profile = wirewebdriver.FirefoxProfile()
-        if self.useragent:
+        if self.__useragent:
             profile.set_preference(
-                "general.useragent.override", self.useragent)
+                "general.useragent.override", self.__useragent)
         for k, v in FF_DEFAULT_PROFILE.items():
             profile.set_preference(k, v)
             profile.DEFAULT_PREFERENCES['frozen'][k] = v
@@ -283,44 +298,62 @@ class Driver:
         driver.implicitly_wait(5)
         return driver
 
-    def get_dirver(self):
-        if self._driver is None:
-            crt = getattr(self, "_create_" + str(self.browser), None)
-            if crt is None:
-                raise Exception("Not implemented yet: %s" % self.browser)
-            self._driver = crt()
-        return self._driver
+    def __build_driver(self):
+        crt = getattr(self, "_create_" + str(self.__browser), None)
+        if crt is None:
+            raise Exception("Not implemented yet: %s" % self.__browser)
+        driver = crt()
+        if self.__human_delay > 1:
+            mths = ('get', 'find_element', 'find_elements', 'click', 'send_keys')
+            for m in dir(driver):
+                if not (m in mths or m.startswith("find_element") or m.startswith("move_to")):
+                    continue
+                ori = getattr(driver, m, None)
+                if not callable(ori):
+                    continue
+                logger.info(f"Driver.{m} set delay")
+                new_mth = mk_delay(f"Driver.{m}", max_delay=self.__human_delay)(ori)
+
+                setattr(
+                    driver,
+                    m,
+                    new_mth
+                )
+        return driver
+
 
     @property
     def driver(self):
-        return self.get_dirver()
+        if self.__driver is None:
+            self.__driver = self.__build_driver()
+        return self.__driver
 
     def close(self, *windows):
-        if self._driver:
-            sz = len(self._driver.window_handles)
+        if self.__driver:
+            sz = len(self.__driver.window_handles)
             if len(windows) in (0, sz):
-                self._driver.quit()
-                self._driver = None
+                self.__driver.quit()
+                self.__driver = None
                 return
             for w in reversed(windows):
-                self._driver.switch_to.window(w)
-                self._driver.close()
-            self._driver.switch_to.window(self._driver.window_handles[0])
+                self.__driver.switch_to.window(w)
+                self.__driver.close()
+            self.__driver.switch_to.window(self.__driver.window_handles[0])
 
     def close_others(self, current=None):
-        if self._driver:
+        if self.__driver:
             if current is None:
-                current = self._driver.current_window_handle
+                current = self.__driver.current_window_handle
             elif isinstance(current, int):
-                current = self._driver.window_handles[current]
-            windows = [w for w in self._driver.window_handles if w != current]
+                current = self.__driver.window_handles[current]
+            windows = [w for w in self.__driver.window_handles if w != current]
             if windows:
                 self.close(*windows)
 
     def switch(self, window):
         if isinstance(window, int):
-            window = self._driver.window_handles[window]
-        self._driver.switch_to.window(window)
+            window = self.__driver.window_handles[window]
+        self.__driver.switch_to.window(window)
 
     def reintentar(self, intentos, sleep=1):
         if intentos > 50:
@@ -340,52 +373,52 @@ class Driver:
         self.driver.get(url)
 
     def get_soup(self, root: str = None):
-        if self._driver is None:
+        if self.__driver is None:
             return None
         if root is None:
-            root = self._driver.current_url
-        return buildSoup(root, self._driver.page_source)
+            root = self.__driver.current_url
+        return buildSoup(root, self.__driver.page_source)
 
     @property
     def current_url(self):
-        if self._driver is None:
+        if self.__driver is None:
             return None
-        return self._driver.current_url
+        return self.__driver.current_url
 
     @property
     def source(self):
-        if self._driver is None:
+        if self.__driver is None:
             return None
-        return self._driver.page_source
+        return self.__driver.page_source
 
     def wait(self, id: Union[int, float, str], seconds=None, presence=False, by=None) -> WebElement:
         if isinstance(id, (int, float)):
             time.sleep(id)
             return
         if seconds is None:
-            seconds = self._wait
+            seconds = self.__wait
         if by is None:
             by = By.ID
             if id.startswith("//"):
                 by = By.XPATH
             if id.startswith("."):
                 by = By.CSS_SELECTOR
-        wait = WebDriverWait(self._driver, seconds)
+        wait = WebDriverWait(self.__driver, seconds)
         if presence:
             wait.until(ec.presence_of_element_located((by, id)))
         else:
             wait.until(ec.visibility_of_element_located((by, id)))
         if by == By.CLASS_NAME:
-            return self._driver.find_element_by_class_name(id)
+            return self.__driver.find_element_by_class_name(id)
         if by == By.CSS_SELECTOR:
-            return self._driver.find_element_by_css_selector(id)
+            return self.__driver.find_element_by_css_selector(id)
         if by == By.XPATH:
-            return self._driver.find_element_by_xpath(id)
-        return self._driver.find_element_by_id(id)
+            return self.__driver.find_element_by_xpath(id)
+        return self.__driver.find_element_by_id(id)
 
     def waitjs(self, js: str, val=True, seconds=None):
         if seconds is None:
-            seconds = self._wait
+            seconds = self.__wait
         js = js.strip()
 
         if not js.startswith("return "):
@@ -397,7 +430,7 @@ class Driver:
                 return val(rt)
             return rt == val
 
-        wait = WebDriverWait(self._driver, seconds)
+        wait = WebDriverWait(self.__driver, seconds)
         wait.until(do_js)
 
     def safe_wait(self, *ids, **kvarg):
@@ -411,7 +444,7 @@ class Driver:
         return None
 
     def val(self, n, val=None, **kwargs):
-        if n is None or self._driver is None:
+        if n is None or self.__driver is None:
             return None
         if isinstance(n, str):
             n = self.wait(n, **kwargs)
@@ -421,12 +454,12 @@ class Driver:
         return n.text
 
     def click(self, n, **kvarg):
-        if n is None or self._driver is None:
+        if n is None or self.__driver is None:
             return None
         if isinstance(n, str):
             n = self.wait(n, **kvarg)
         if n.is_displayed():
-            ActionChains(self._driver).move_to_element(n).click(n).perform()
+            ActionChains(self.__driver).move_to_element(n).click(n).perform()
             # n.click()
         else:
             n.send_keys(Keys.RETURN)
@@ -459,11 +492,11 @@ class Driver:
         return self.driver.execute_script(*args, **kwargs)
 
     def pass_cookies(self, session=None):
-        if self._driver is None:
+        if self.__driver is None:
             return session
         if session is None:
             session = requests.Session()
-        for cookie in self._driver.get_cookies():
+        for cookie in self.__driver.get_cookies():
             session.cookies.set(cookie['name'], cookie['value'])
         return session
 

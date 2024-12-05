@@ -16,7 +16,8 @@ from .wpjson import WP
 from dataclasses import dataclass, asdict, is_dataclass
 from urllib.parse import quote_plus
 from .img import MyImage
-from selenium.common.exceptions import TimeoutException
+import random
+import time
 
 
 from .filemanager import FM
@@ -339,19 +340,23 @@ class Api:
     DETAIL = 'https://programacion.abonoteatro.com/catalogo/detalle_evento.php'
     CATALOG = (
         "https://compras.abonoteatro.com/teatro/",
-        "https://compras.abonoteatro.com/cine-y-eventos/",
-        "https://www.abonoteatro.com/catalogo/cine_peliculas.php",
+        #"https://compras.abonoteatro.com/cine-y-eventos/",
+        #"https://www.abonoteatro.com/catalogo/cine_peliculas.php",
     )
 
-    def __init__(self, publish=None):
+    def __init__(self, publish=None, human_delay=5):
         self.__w = None
         self.__base64: Dict[str, str] = {}
         self.__types = None
+        self.__human_delay = human_delay
         self.publish: Dict[int, str] = publish or {}
 
     def get(self, url, *args, label_log=None, **kwargs):
         if self.w.url == url and len(args) == 0 and len(kwargs) == 0:
             return
+        if self.__human_delay > 1:
+            delay = random.uniform(1, self.__human_delay)
+            time.sleep(delay)
         self.w.get(url, *args, **kwargs)
         log = (str(label_log)+":" if label_log is not None else "")
         if kwargs:
@@ -384,7 +389,7 @@ class Api:
     @property
     def w(self):
         if self.__w is None:
-            with PortalDriver("firefox") as w:
+            with PortalDriver("firefox", human_delay=self.__human_delay) as w:
                 w.login()
                 self.__w = w.to_web()
         return self.__w
@@ -402,7 +407,7 @@ class Api:
                 if e.id not in evs or e.precio > evs[e.id].precio:
                     evs[e.id] = e.merge(
                         publicado=self.publish.get(e.id, NOW),
-                        creado=self.media_date.get(e.img)
+                        creado=None  # self.media_date.get(e.img)
                     )
         return tuple(sorted(evs.values()))
 
@@ -461,7 +466,7 @@ class Api:
         npts = self.w.soup.select('input[type="hidden"]')
         if len(npts) > 0:
             return npts
-        with PortalDriver("firefox") as w:
+        with PortalDriver("firefox", human_delay=self.__human_delay) as w:
             w.login()
             w.get(url)
             iframe = w.safe_wait(Api.IFRAME, by=By.CSS_SELECTOR, seconds=5)
@@ -563,7 +568,6 @@ class Api:
     def get_soup_day(self, id: int):
         url = Api.URLDAY + str(id)
         self.get(url)
-        logger.info("GET "+url)
         return self.w.soup
 
     def find_category(self, url: str, js: Dict):
