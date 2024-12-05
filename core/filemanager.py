@@ -8,6 +8,7 @@ from functools import cache
 import requests
 from bs4 import BeautifulSoup, Tag
 from json.decoder import JSONDecodeError
+from io import BytesIO
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +101,10 @@ class FileManager:
     def cached_load(self, file, *args, **kargv):
         return self.load(file, *args, **kargv)
 
+    def exists(self, file):
+        file = self.resolve_path(file)
+        return file.exists()
+
     def dump(self, file, obj, *args, **kargv):
         """
         Guarda un fichero en funcion de su extension
@@ -109,6 +114,15 @@ class FileManager:
         makedirs(file.parent, exist_ok=True)
 
         ext = self.normalize_ext(file.suffix)
+
+        if isinstance(obj, BytesIO):
+            with open(file, "wb") as f:
+                f.write(obj.getvalue())
+            return
+        if isinstance(obj, bytes):
+            with open(file, "wb") as f:
+                f.write(obj)
+            return
 
         dump_fl = getattr(self, "dump_"+ext, None)
         if dump_fl is None:

@@ -11,8 +11,24 @@ from pytesseract import image_to_string
 import time
 from requests.exceptions import RequestException, ConnectionError
 from urllib3.exceptions import NewConnectionError
+from core.cache import Cache
+from core.filemanager import FM
 
 logger = logging.getLogger(__name__)
+
+
+class BytesIOCache(Cache):
+    def parse_file_name(self, url: str, slf=None, **kargv):
+        path = url.split("://", 1)[-1]
+        return self.file+path
+
+    def read(self, file, *args, **kwargs):
+        path = FM.resolve_path(file)
+        if not path.exists():
+            return None
+        with open(path, "rb") as f:
+            content = f.read()
+        return BytesIO(content)
 
 
 def get_webarchive(url):
@@ -123,6 +139,7 @@ class MyImage:
             logger.critical(f"La ruta no apunta a una imagen válida {self.path}", exc_info=True)
         return None
 
+    @BytesIOCache("rec/img/")
     def __get_from_url_using_webarchive(self, url: str, tries=3):
         arch = None
         try:
