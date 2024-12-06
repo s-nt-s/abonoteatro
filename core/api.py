@@ -24,6 +24,7 @@ from core.web import Web
 from .filemanager import FM
 
 logger = logging.getLogger(__name__)
+re_filmaffinity = re.compile(r"https://www.filmaffinity.com/es/film\d+.html")
 
 re_sp = re.compile(r"\s+")
 MONTHS = ("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic")
@@ -183,13 +184,18 @@ class Evento:
             return "https://autocines.com/cartelera-cine-madrid/"
         if self.categoria is None:
             return None
-        txt = re.sub(r"^\s*sesión exclusiva?:\s*|[\.,\s]*con la intervención de.*$|\s*\(?V\.?O\.?S\.?E\.?\)?\s*$", "",self.txt, flags=re.IGNORECASE)
-        txt = txt.strip(". ")
-        txt = quote_plus(txt)
+        title = re.sub(r"^\s*sesión exclusiva?:\s*|[\.,\s]*con la intervención de.*$|\s*\(?V\.?O\.?S\.?E\.?\)?\s*$", "", self.txt, flags=re.IGNORECASE)
+        title = title.strip(". ")
+        txt = quote_plus(title)
         if self.categoria == "cine":
-            url = get_redirect("https://www.filmaffinity.com/es/search.php?stype%5B%5D=title&stext="+txt)
-            if url and re.match(r"https://www.filmaffinity.com/es/film\d+.html", url):
-                return url
+            w = Web()
+            w.get("https://www.filmaffinity.com/es/search.php?stext="+txt)
+            if re_filmaffinity.match(w.url):
+                return w.url
+            lwtitle = title.lower()
+            for a in w.soup.select("div.mc-title a"):
+                if get_text(a).lower() == lwtitle:
+                    return a.attrs["href"]
             return "https://www.google.es/search?&complete=0&gbv=1&q="+txt
         return "https://www.atrapalo.com/busqueda/?pg=buscar&producto=ESP&keyword="+txt
 
