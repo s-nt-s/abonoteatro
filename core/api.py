@@ -768,7 +768,7 @@ class AnomApi(Api):
             if e.id not in evs or e.precio > evs[e.id].precio:
                 evs[e.id] = e.merge(
                     publicado=self.publish.get(e.id, NOW),
-                    creado=None  # self.media_date.get(e.img)
+                    creado=self.media_date.get(e.img)
                 )
         return tuple(sorted(evs.values()))
 
