@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from core.api import Api, Evento, Sesion, AnomApi
+from core.api import Evento, Sesion, AnomApi
 from core.j2 import Jnj2, toTag
 from datetime import datetime, timedelta
 from core.log import config_log
@@ -18,6 +18,21 @@ import math
 import bs4
 import re
 import argparse
+import time
+from requests import Session
+import random
+
+
+s_request = Session.request
+
+
+def delayed_request(*args, **kwargs):
+    delay = random.uniform(1, 3)
+    time.sleep(delay)
+    return s_request(*args, **kwargs)
+
+
+Session.request = delayed_request
 
 environ['IS_ANON'] = "true"
 
