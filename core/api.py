@@ -11,13 +11,11 @@ from functools import cached_property
 import base64
 import json
 from urllib.parse import quote
-from .util import clean_js_obj, clean_txt, get_obj, trim, get_text, clean_html, simplify_html, re_or, re_and, plain_text, get_redirect
+from .util import clean_js_obj, clean_txt, get_obj, trim, get_text, clean_html, simplify_html, re_or, re_and, plain_text
 from .wpjson import WP
 from dataclasses import dataclass, asdict, is_dataclass
 from urllib.parse import quote_plus
 from .img import MyImage
-import random
-import time
 from core.web import Web
 
 
@@ -352,19 +350,15 @@ class Api:
         #"https://www.abonoteatro.com/catalogo/cine_peliculas.php",
     )
 
-    def __init__(self, publish=None, human_delay=5):
+    def __init__(self, publish=None):
         self._w = None
         self.__base64: Dict[str, str] = {}
         self.__types = None
-        self.__human_delay = human_delay
         self.publish: Dict[int, str] = publish or {}
 
     def get(self, url, *args, label_log=None, **kwargs):
         if self.w.url == url and len(args) == 0 and len(kwargs) == 0:
             return
-        if self.__human_delay > 1:
-            delay = random.uniform(1, self.__human_delay)
-            time.sleep(delay)
         self.w.get(url, *args, **kwargs)
         log = (str(label_log)+":" if label_log is not None else "")
         if kwargs:
@@ -397,7 +391,7 @@ class Api:
     @property
     def w(self):
         if self._w is None:
-            with PortalDriver("firefox", human_delay=self.__human_delay) as w:
+            with PortalDriver("firefox", human_delay=3) as w:
                 w.login()
                 self._w = w.to_web()
         return self._w
@@ -410,7 +404,7 @@ class Api:
     @TupleCache("rec/eventos.json", builder=Evento.build)
     def get_events(self):
         evs: Dict[int, Evento] = {}
-        for url in Api.CATALOG:
+        for url in self.CATALOG:
             for e in self.get_events_from(url):
                 if e.id not in evs or e.precio > evs[e.id].precio:
                     evs[e.id] = e.merge(
@@ -476,7 +470,7 @@ class Api:
         npts = self.w.soup.select('input[type="hidden"]')
         if len(npts) > 0:
             return npts
-        with PortalDriver("firefox", human_delay=self.__human_delay) as w:
+        with PortalDriver("firefox", human_delay=3) as w:
             w.login()
             w.get(url)
             iframe = w.safe_wait(Api.IFRAME, by=By.CSS_SELECTOR, seconds=5)
@@ -507,7 +501,7 @@ class Api:
 
     def get_base64(self, id: int):
         if id not in self.__base64:
-            for url in Api.CATALOG:
+            for url in self.CATALOG:
                 list(self.get_base64_event(url))
         return self.__base64.get(id)
 
@@ -747,6 +741,9 @@ class Api:
 
 
 class AnonApi(Api):
+    CATALOG = (
+        'https://programacion.abonoteatro.com/catalogo/teatros2.php?token='+environ['PROGRAMA_TOKEN'],
+    )
 
     @property
     def w(self):
@@ -754,38 +751,11 @@ class AnonApi(Api):
             self._w = Web()
         return self._w
 
-    def get(self, url, *args, label_log=None, headers=None, **kwargs):
-        if self.w.url == url and len(args) == 0 and len(kwargs) == 0:
-            return
-        self.w.get(url, *args, headers=headers, **kwargs)
-        log = (str(label_log)+":" if label_log is not None else "")
-        url_log = re.sub(r"token=.*", "token=", url)
-        if kwargs:
-            logger.info(f"{log} POST {url_log}".strip())
-        else:
-            logger.info(f"{log} GET {url_log}".strip())
-        self._find_types()
-
-    @TupleCache("rec/eventos.json", builder=Evento.build)
-    def get_events(self):
-        evs: Dict[int, Evento] = {}
-        url = 'https://programacion.abonoteatro.com/catalogo/teatros2.php?token='+environ['PROGRAMA_TOKEN']
-        for e in self.get_events_from(url):
-            if e.id not in evs or e.precio > evs[e.id].precio:
-                evs[e.id] = e.merge(
-                    publicado=self.publish.get(e.id, NOW),
-                    creado=self.media_date.get(e.img)
-                )
-        return tuple(sorted(evs.values()))
-
     def _get_list_event(self, url: str):
         self.get(url, headers={
             'Referer': 'https://compras.abonoteatro.com/',
             'Cookie': 'unabonado=;',
         })
-        iframe = self.w.soup.select_one(Api.IFRAME)
-        if iframe is not None:
-            self.get(iframe.attrs["src"])
         npts = self.w.soup.select('input[type="hidden"]')
         if len(npts) == 0:
             raise ApiException(f"0 eventos en {url}")
