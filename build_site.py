@@ -21,6 +21,9 @@ import argparse
 import time
 from requests import Session
 import random
+from requests.exceptions import ConnectionError
+from urllib3.exceptions import ProtocolError
+from http.client import RemoteDisconnected
 
 
 s_request = Session.request
@@ -29,6 +32,11 @@ s_request = Session.request
 def delayed_request(*args, **kwargs):
     delay = random.uniform(1, 3)
     time.sleep(delay)
+    for i in range(1, 3):
+        try:
+            return s_request(*args, **kwargs)
+        except (ConnectionError, ProtocolError, RemoteDisconnected):
+            time.sleep(10*i)
     return s_request(*args, **kwargs)
 
 
