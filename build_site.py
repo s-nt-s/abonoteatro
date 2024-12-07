@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from core.api import Evento, Sesion, AnomApi
+from core.api import Evento, Sesion, AnonApi
 from core.j2 import Jnj2, toTag
 from datetime import datetime, timedelta
 from core.log import config_log
@@ -126,7 +126,7 @@ logger.info(f"{len(fechas)} fechas recuperadas")
 publish = {k: v['publicado'] for k, v in fechas.items()}
 
 logger.info("Recuperar eventos")
-eventos = list(AnomApi(publish=publish).get_events())
+eventos = list(AnonApi(publish=publish).get_events())
 logger.info(f"{len(eventos)} recuperados")
 categorias = {}
 lugares = {}

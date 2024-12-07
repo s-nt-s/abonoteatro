@@ -746,7 +746,7 @@ class Api:
         return "teatro"
 
 
-class AnomApi(Api):
+class AnonApi(Api):
 
     @property
     def w(self):
