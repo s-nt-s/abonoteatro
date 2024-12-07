@@ -361,10 +361,11 @@ class Api:
             return
         self.w.get(url, *args, **kwargs)
         log = (str(label_log)+":" if label_log is not None else "")
+        url_log = re.sub(r"\btoken=\w+", "token=***", url)
         if kwargs:
-            logger.info(f"{log} POST {url}".strip())
+            logger.info(f"{log} POST {url_log}".strip())
         else:
-            logger.info(f"{log} GET {url}".strip())
+            logger.info(f"{log} GET {url_log}".strip())
         self._find_types()
 
     def _find_types(self):
