@@ -629,6 +629,10 @@ class Api:
         recinto = plain_text(js['recinto']) or ""
         if recinto == "wizink center baloncesto":
             return "otros"
+        if _or(name, "visita guiada", "visita libre", "visita a la capital", "audioguia", "tour guiado"):
+            return "visita"
+        if _or(info, "antes de la hora de salida de la visita"):
+            return "visita"
         if _or(name+" "+recinto, "autocine", "cinesa", "cinesur", "yelmo"):
             return "cine"
         if _and(name+" "+recinto, "mk2", ("sesion", "director")):
