@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class BytesIOCache(Cache):
-    def parse_file_name(self, url: str, slf=None, **kargv):
+    def parse_file_name(self, url: str, slf=None, **kwargs):
         path = url.split("://", 1)[-1]
         return self.file+path
 

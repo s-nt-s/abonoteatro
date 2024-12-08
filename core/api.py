@@ -1,7 +1,7 @@
 from core.web import Driver
 from os import environ
 from selenium.webdriver.common.by import By
-from typing import NamedTuple, Tuple, Set, Dict, List
+from typing import NamedTuple, Tuple, Set, Dict, List, Union
 import re
 from bs4 import Tag, BeautifulSoup
 from datetime import datetime, date
@@ -11,7 +11,7 @@ from functools import cached_property
 import base64
 import json
 from urllib.parse import quote
-from .util import clean_js_obj, clean_txt, get_obj, trim, get_text, clean_html, simplify_html, re_or, re_and, plain_text
+from .util import get_joins, clean_js_obj, clean_txt, get_obj, trim, get_text, clean_html, simplify_html, re_or, re_and, plain_text
 from .wpjson import WP
 from dataclasses import dataclass, asdict, is_dataclass
 from urllib.parse import quote_plus
@@ -27,6 +27,10 @@ re_filmaffinity = re.compile(r"https://www.filmaffinity.com/es/film\d+.html")
 re_sp = re.compile(r"\s+")
 MONTHS = ("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic")
 NOW = datetime.now().strftime("%Y-%m-%d %H:%S")
+
+
+def get_slug(url: str):
+    return url.rsplit("/", 1)[-1].rsplit(".", 1)[0]
 
 
 class TupleCache(Cache):
@@ -59,13 +63,13 @@ class TupleCache(Cache):
 
 
 class UrlCache(Cache):
-    def parse_file_name(self, url: str, slf=None, **kargv):
+    def parse_file_name(self, url: str, slf=None, **kwargs):
         path = url.rstrip("/").split("/")[-1]
         return self.file.format(path)
 
 
 class UrlTupleCache(TupleCache):
-    def parse_file_name(self, url: str, slf=None, **kargv):
+    def parse_file_name(self, url: str, slf=None, **kwargs):
         path = url.rstrip("/").split("/")[-1]
         return self.file.format(path)
 
@@ -132,15 +136,15 @@ class Lugar(NamedTuple):
 @dataclass(frozen=True, order=True)
 class Evento:
     id: int
-    img: str
-    precio: float
+    img: Union[str, None]
+    precio: Union[float, None]
     categoria: str
     lugar: Lugar
     sesiones: Tuple[Sesion] = tuple()
-    txt: str = None
-    subtitulo: str = None
-    creado: str = None
-    publicado: str = None
+    txt:  Union[str, None] = None
+    subtitulo:  Union[str, None] = None
+    creado: Union[str, None] = None
+    publicado:  Union[str, None] = None
 
     def __post_init__(self):
         object.__setattr__(self, 'txt', clean_txt(self.txt))
@@ -410,19 +414,34 @@ class Api:
                 if e.id not in evs or e.precio > evs[e.id].precio:
                     evs[e.id] = e.merge(
                         publicado=self.publish.get(e.id, NOW),
-                        creado=self.media_date.get(e.img)
                     )
+        self.__find_create_date(evs)
         return tuple(sorted(evs.values()))
 
-    @cached_property
-    def media_date(self):
-        if environ['IS_ANON'] != "true":
-            return {}
-        data = {}
-        for m in self.wp.media:
-            f = m['modified'].replace("T", " ")[:16]
-            u = m['source_url']
-            data[u] = f
+    def __find_create_date(self, evs: Dict[int, Evento]):
+        img_slugs: Set[str] = set()
+        for e in evs.values():
+            if e.creado is None and e.img is not None:
+                img_slugs.add(get_slug(e.img))
+        if len(img_slugs) == 0:
+            return
+        data: Dict[str, str] = self.__get_images_dates(img_slugs)
+        for id, e in list(evs.items()):
+            if e.creado is None:
+                evs[id] = e.merge(creado=data.get(e.img))
+
+    @Cache("rec/wp/image.json")
+    def __get_images_dates(self, img_slugs: Set[str]):
+        done: Set[str] = set()
+        data: Dict[str, str] = {}
+        for _ in range(2):
+            slugs = sorted(img_slugs.difference(done))
+            for slug in get_joins(slugs, ',', 1500):
+                for m in self.wp._get_all_objects('image', slug=slug):
+                    f = m['modified'].replace("T", " ")[:16]
+                    u = m['source_url']
+                    data[u] = f
+                    done.add(get_slug(u))
         return data
 
     def get_events_from(self, url):

@@ -259,7 +259,7 @@ class Jnj2():
                 del a.attrs["target"]
         return str(soup)
 
-    def create_script(self, destino, replace=False, **kargv):
+    def create_script(self, destino, replace=False, **kwargs):
         destino = self.destino + destino
         if not replace and isfile(destino):
             return
@@ -268,7 +268,7 @@ class Jnj2():
             indent = None
         separators = (',', ':') if indent is None else None
         with open(destino, "w") as f:
-            for i, (k, v) in enumerate(kargv.items()):
+            for i, (k, v) in enumerate(kwargs.items()):
                 if i > 0:
                     f.write("\n")
                 f.write("const "+k+" = ")

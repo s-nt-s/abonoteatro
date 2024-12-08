@@ -198,7 +198,14 @@ def mysorted(eventos: List[Evento]):
         return (e.titulo.lower(), e.lugar.direccion.strip().split()[-1])
     arr1 = sorted(
         eventos,
-        key=lambda e: (e.publicado, e.creado or e.publicado, e.precio, len(e.sesiones), e.txt, e.id)
+        key=lambda e: (
+            e.publicado,
+            e.creado or e.publicado,
+            e.precio,
+            len(e.sesiones),
+            e.txt,
+            e.id
+        )
     )
     arr2 = []
     for i1, e1 in enumerate(arr1):

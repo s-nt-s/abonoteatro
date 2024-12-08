@@ -21,9 +21,9 @@ class Cache:
         self._kwargs = kwargs
         self.skip = skip
 
-    def parse_file_name(self, *args, slf=None, **kargv):
-        if args or kargv:
-            return self.file.format(*args, **kargv)
+    def parse_file_name(self, *args, slf=None, **kwargs):
+        if args or kwargs:
+            return self.file.format(*args, **kwargs)
         return self.file
 
     def read(self, file, *args, **kwargs):
@@ -94,7 +94,7 @@ class StaticCache(Cache):
             self.save(fl, data, *args, **kwargs)
         return data
 
-    def parse_file_name(self, *args, **kargv):
-        if args or kargv:
-            return self.file.format(*args, **kargv)
+    def parse_file_name(self, *args, **kwargs):
+        if args or kwargs:
+            return self.file.format(*args, **kwargs)
         return self.file

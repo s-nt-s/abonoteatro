@@ -327,3 +327,26 @@ def to_datetime(s: str):
         dt = datetime.strptime(s, "%Y-%m-%d %H:%M")
     dt = tz.localize(dt)
     return dt
+
+
+def get_chunks(arr: List, size: int):
+    chunk = []
+    for a in arr:
+        chunk.append(a)
+        if len(chunk) == size:
+            yield chunk
+            chunk = []
+    if len(chunk) > 0:
+        yield chunk
+
+
+def get_joins(arr: List, sep: str, size: int):
+    line = ""
+    lsep = len(sep)
+    for a in arr:
+        if (len(line) + len(a) - lsep) > size:
+            yield line[lsep:]
+            line = ""
+        line = line + sep + a
+    if len(line) > 0:
+        yield line[lsep:]

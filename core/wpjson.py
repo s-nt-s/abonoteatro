@@ -6,7 +6,7 @@ from urllib.parse import urlencode
 from json.decoder import JSONDecodeError
 import logging
 from .cache import Cache
-from typing import Tuple, Dict
+from typing import Tuple, Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -44,12 +44,17 @@ class WP:
         logger.info(f"{len(js):>4} {url}")
         return js
 
-    def get_objects(self, tp, size=100, page=1, **kargv):
+    def get_objects(self, tp, size=100, page=1, **kwargs):
+        if tp in ("image", 'video', 'text', 'application', 'audio'):
+            if kwargs.get('media_type') not in (tp, None):
+                raise ValueError(f"media_type!={tp} ({kwargs['media_type']})")
+            kwargs['media_type'] = tp
+            tp = "media"
         url = "/wp/v2/{}/&per_page={}&page={}".format(tp, size, page)
-        if "offset" in kargv and kargv["offset"] in (None, 0):
-            del kargv["offset"]
-        if kargv:
-            url = url + "&" + urlencode(kargv, doseq=True)
+        if "offset" in kwargs and kwargs["offset"] in (None, 0):
+            del kwargs["offset"]
+        if kwargs:
+            url = url + "&" + urlencode(kwargs, doseq=True)
         return self.get(url)
 
     def get_object(self, tp, id):
@@ -57,30 +62,30 @@ class WP:
         js = self.get(url)
         return js
 
-    def safe_get_object(self, tp, size=100, page=1, **kargv):
+    def safe_get_object(self, tp, size=100, page=1, **kwargs):
         try:
-            return self.get_objects(tp, size=size, page=page, orderby='id', order='asc', **kargv)
+            return self.get_objects(tp, size=size, page=page, orderby='id', order='asc', **kwargs)
         except JSONDecodeError:
             pass
-        offset = kargv.get("offset", 0)
+        offset = kwargs.get("offset", 0)
         offset = offset + ((size)*(page-1))
-        if "offset" in kargv:
-            del kargv["offset"]
+        if "offset" in kwargs:
+            del kwargs["offset"]
         if size % 2 == 0:
             n_size = int(size / 2)
-            r1 = self.safe_get_object(tp, size=n_size, page=1, offset=offset, **kargv)
-            r2 = self.safe_get_object(tp, size=n_size, page=2, offset=offset, **kargv)
+            r1 = self.safe_get_object(tp, size=n_size, page=1, offset=offset, **kwargs)
+            r2 = self.safe_get_object(tp, size=n_size, page=2, offset=offset, **kwargs)
             return r1 + r2
         if size % 3 == 0:
             n_size = int(size / 3)
-            r1 = self.safe_get_object(tp, size=n_size, page=1, offset=offset, **kargv)
-            r2 = self.safe_get_object(tp, size=n_size, page=2, offset=offset, **kargv)
-            r3 = self.safe_get_object(tp, size=n_size, page=3, offset=offset, **kargv)
+            r1 = self.safe_get_object(tp, size=n_size, page=1, offset=offset, **kwargs)
+            r2 = self.safe_get_object(tp, size=n_size, page=2, offset=offset, **kwargs)
+            r3 = self.safe_get_object(tp, size=n_size, page=3, offset=offset, **kwargs)
             return r1 + r2 + r3
         rs = []
         for p in range(1, size+1):
             try:
-                r = self.get_objects(tp, size=1, page=p, offset=offset, orderby='id', order='asc', **kargv)
+                r = self.get_objects(tp, size=1, page=p, offset=offset, orderby='id', order='asc', **kwargs)
                 if isinstance(r, list) and len(r) > 0:
                     rs.extend(r)
                 else:
@@ -90,12 +95,15 @@ class WP:
         return rs
 
     @Cache("rec/wp/{0}.json")
-    def get_all_objects(self, tp, size=100, **kargv):
+    def get_all_objects(self, tp):
+        return self._get_all_objects(tp, size=100)
+
+    def _get_all_objects(self, tp, size=100, **kwargs):
         rs = {}
         page = 0
         while True:
             page = page + 1
-            r = self.safe_get_object(tp, size=size, page=page, **kargv)
+            r = self.safe_get_object(tp, size=size, page=page, **kwargs)
             if isinstance(r, list) and len(r) > 0:
                 for i in r:
                     rs[i["id"]] = i
@@ -120,6 +128,10 @@ class WP:
     @cached_property
     def media(self) -> Tuple[Dict]:
         return tuple(self.get_all_objects("media"))
+
+    @cached_property
+    def image(self) -> Tuple[Dict]:
+        return tuple(self.get_all_objects("image"))
 
     @cached_property
     def comments(self) -> Tuple[Dict]:
