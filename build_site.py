@@ -24,6 +24,7 @@ import random
 from requests.exceptions import ConnectionError
 from urllib3.exceptions import ProtocolError
 from http.client import RemoteDisconnected
+from collections import defaultdict
 
 
 s_request = Session.request
@@ -221,14 +222,17 @@ def mysorted(eventos: List[Evento]):
 eventos: Tuple[Evento] = mysorted(eventos)
 
 logger.info("Añadiendo ics")
-icsevents = []
+icsevents: Dict[str, List[IcsEvent]] = defaultdict(list)
 for e in eventos:
     for s in e.sesiones:
         ics = event_to_ics(e, s)
         if ics is not None:
             ics.dumpme(f"out/cal/{e.id}_{s.id}.ics")
-            icsevents.append(ics)
-IcsEvent.dump("out/eventos.ics", *icsevents)
+            icsevents['eventos'].append(ics)
+            icsevents[e.categoria].append(ics)
+
+for name, evs in icsevents.items():
+    IcsEvent.dump(f"out/{name}.ics", *evs)
 
 logger.info("Añadiendo imágenes")
 img_eventos = tuple(map(add_image, eventos))
@@ -301,7 +305,7 @@ for img, e in img_eventos:
         count=len(eventos)
     )
 
-logger.info(f"Creando rss")
+logger.info("Creando rss")
 EventosRss(
     destino=OUT,
     root=PAGE_URL,
