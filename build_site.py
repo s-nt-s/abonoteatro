@@ -27,21 +27,29 @@ from http.client import RemoteDisconnected
 from collections import defaultdict
 
 
-s_request = Session.request
+def get_env_int(name: str):
+    sd = environ.get(name)
+    if sd is None or not sd.isdigit():
+        return 0
+    return int(sd)
 
 
-def delayed_request(*args, **kwargs):
-    delay = random.uniform(1, 3)
-    time.sleep(delay)
-    for i in range(1, 3):
-        try:
-            return s_request(*args, **kwargs)
-        except (ConnectionError, ProtocolError, RemoteDisconnected):
-            time.sleep(10*i)
-    return s_request(*args, **kwargs)
+SESSION_DELAY = get_env_int("SESSION_DELAY")
 
+if SESSION_DELAY > 0:
+    s_request = Session.request
 
-Session.request = delayed_request
+    def delayed_request(*args, **kwargs):
+        delay = random.uniform(1, SESSION_DELAY)
+        time.sleep(delay)
+        for i in range(1, 3):
+            try:
+                return s_request(*args, **kwargs)
+            except (ConnectionError, ProtocolError, RemoteDisconnected):
+                time.sleep(10*i)
+        return s_request(*args, **kwargs)
+
+    Session.request = delayed_request
 
 environ['IS_ANON'] = "true"
 
