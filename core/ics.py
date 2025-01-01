@@ -69,7 +69,7 @@ class IcsEvent:
     def parse_summary(self, s: str):
         if "visita" not in self.categories:
             return s
-        s = re.sub(r"^(Tour guiado por|ruta por|visita a|visita guiada de|Tour|Ruta De|Descubre)\s*", "", s, flags=re.IGNORECASE)
+        s = re.sub(r"^(Tour guiado por|ruta por|visita a|visita guiada de|Tour|visita|Ruta De|Descubre)\s*", "", s, flags=re.IGNORECASE)
         s = re.sub(r"\s*(,?\s*Visita libre con audioguía)\s*$", "", s, flags=re.IGNORECASE)
         return s
 
