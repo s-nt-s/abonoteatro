@@ -66,6 +66,13 @@ class IcsEvent:
     def parse_description(self, s: str):
         return re.sub(r"\n", r"\\n", s)
 
+    def parse_summary(self, s: str):
+        if "visita" not in self.categories:
+            return s
+        s = re.sub(r"^(Tour guiado por|ruta por|visita a|visita guiada de|Tour|Ruta De|Descubre)\s*", "", s, flags=re.IGNORECASE)
+        s = re.sub(r"\s*(,?\s*Visita libre con audioguía)\s*$", "", s, flags=re.IGNORECASE)
+        return s
+
     def __str__(self):
         lines = ["BEGIN:VEVENT", "STATUS:CONFIRMED"]
         for k, v in asdict(self).items():
