@@ -437,10 +437,12 @@ class Api:
         for _ in range(2):
             slugs = sorted(img_slugs.difference(done))
             for slug in get_joins(slugs, ',', 1500):
-                for m in self.wp._get_all_objects('image', slug=slug):
-                    f = m['modified'].replace("T", " ")[:16]
-                    u = m['source_url']
-                    data[u] = f
+                for i in self.wp._get_all_objects('image', slug=slug):
+                    u = i['source_url']
+                    m = i['modified']
+                    if not isinstance(u, str) or not isinstance(m, str):
+                        continue
+                    data[u] = m.replace("T", " ")[:16]
                     done.add(get_slug(u))
         return data
 
