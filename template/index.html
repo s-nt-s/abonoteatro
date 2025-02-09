@@ -24,10 +24,12 @@
 <body>
   {% with root="." %} {% include "header.html" %} {% endwith %}
   <main>
+    {% if fecha %}
     <p class="fechas needjs">
       <input type="date" id="ini" value="{{fecha.ini}}" min="{{fecha.ini}}" max="{{fecha.fin}}" title="Fecha de inicio">
       <input type="date" id="fin" value="{{fecha.fin}}" min="{{fecha.ini}}" max="{{fecha.fin}}" title="Fecha de fin">
     </p>
+    {% endif %}
     <p class="categoria needjs">
       <select id="filtro">
         <option value="">Todos ({{count}})</option>

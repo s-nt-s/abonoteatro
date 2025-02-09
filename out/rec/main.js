@@ -209,6 +209,7 @@ function getCss(form) {
 
 function fixDates() {
   const fin = document.getElementById("fin");
+  if (fin==null) return;
   const i = getValDate("ini");
   const f = getValDate("fin");
   fin.setAttribute("min", i ?? FormQuery.MIN_DATE);
@@ -238,7 +239,8 @@ document.addEventListener("DOMContentLoaded", function () {
   FormQuery.FILTERS = get_optgroups("filtro");
   window.__title__ = document.querySelector("title").textContent.trim();
   FormQuery.query_to_form();
-  document.getElementById("ini").addEventListener("change", fixDates);
+  const ini = document.getElementById("ini");
+  if (ini!=null) ini.addEventListener("change", fixDates);
   fixDates();
   document.querySelectorAll("input, select").forEach((i) => {
     i.addEventListener("change", filtrar);

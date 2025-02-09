@@ -299,7 +299,7 @@ j.save(
     fecha=dict(
         ini=min(sesiones.keys()),
         fin=max(sesiones.keys())
-    )
+    ) if sesiones else None
 )
 
 for img, e in img_eventos:

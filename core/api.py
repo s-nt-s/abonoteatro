@@ -519,6 +519,9 @@ class Api:
     def get_soup_detail(self, id: int):
         self.get(Api.DETAIL, action='show',
                  content=self.get_base64(id), label_log=id)
+        if len(re_sp.sub("", str(self.w.soup))) == 0:
+            logger.warning(f"Empty detail in {id}")
+            logger.debug(self.w.curlify())
         return self.w.soup
 
     def get_base64(self, id: int):
@@ -594,6 +597,9 @@ class Api:
     def get_soup_day(self, id: int):
         url = Api.URLDAY + str(id)
         self.get(url)
+        if len(re_sp.sub("", str(self.w.soup))) == 0:
+            logger.warning(f"Empty day in {id}")
+            logger.debug(self.w.curlify())
         return self.w.soup
 
     def find_category(self, url: str, js: Dict):
